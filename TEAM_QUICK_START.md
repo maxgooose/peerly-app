@@ -10,13 +10,13 @@ npm install
 ```
 
 ### 2. Create Environment File
-Create `.env.local` with these credentials:
+Create `.env.local` with these credentials (get them from Hamza):
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://sebscmgcuosemsztmsoq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNjbWdjdW9zZW1zenRtc29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5Njc5MTEsImV4cCI6MjA3NjU0MzkxMX0.yAXBffpkHUDwefxjFx2bHcPMy02l0dAF54HlsB6M6uQ
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYnNjbWdjdW9zZW1zenRtc29xIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDk2NzkxMSwiZXhwIjoyMDc2NTQzOTExfQ.yIgB6vF8ltOMxzBN5ArWAn3zoXKeow8YA8HceMe99Rk
-GEMINI_API_KEY=your_gemini_api_key_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[get from Hamza]
+SUPABASE_SERVICE_ROLE_KEY=[get from Hamza]
+GEMINI_API_KEY=[get from Hamza]
 ```
 
 ### 3. Start Building
