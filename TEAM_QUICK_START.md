@@ -1,20 +1,16 @@
-# Quick Team Setup - Supabase Connection
+# Team Setup Guide
 
-## For Your Team Members
+## Quick Setup (3 steps)
 
-### Step 1: Clone and Setup
+### 1. Clone and Install
 ```bash
 git clone [your-repo-url]
 cd peerly-app
+npm install
 ```
 
-### Step 2: Create Environment File
-```bash
-cp supabase-config-template.txt .env.local
-```
-
-### Step 3: Fill in Credentials
-Edit `.env.local` with these exact values:
+### 2. Create Environment File
+Create `.env.local` with these credentials:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://sebscmgcuosemsztmsoq.supabase.co
@@ -23,26 +19,12 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### Step 4: Test Connection
+### 3. Start Building
 ```bash
-# Install dependencies (when you start building)
-npm install @supabase/supabase-js
+# Import Supabase client
+import { supabase } from './lib/supabase.ts'
 
-# Test connection (optional)
-node -e "
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-supabase.from('users').select('count').then(({data, error}) => {
-  if (error) console.log('❌', error.message);
-  else console.log('✅ Connected to Supabase!');
-});
-"
+# Start your React Native/Expo project
 ```
 
 ## ✅ That's It!

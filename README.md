@@ -2,41 +2,30 @@
 
 A mobile app that connects university students for study partnerships through intelligent matching and real-time chat.
 
-## Overview
+## Quick Start
 
-Peerly helps students find compatible study partners at their university by matching based on shared subjects, availability, and academic interests. The app features both automatic daily matching and manual swipe-based discovery.
-
-## Key Features
-
-- **Smart Matching**: AI-powered compatibility scoring based on subjects, availability, and preferences
-- **Dual Match Types**: 
-  - Automatic daily matches with AI-generated first messages
-  - Manual swipe discovery for user-initiated connections
-- **Real-time Chat**: Instant messaging with study session scheduling
-- **University Verification**: .edu email authentication for verified student access
-- **Study Session Planning**: Schedule and track collaborative study sessions
+1. **Clone the repository**
+2. **Copy environment file**: `cp TEAM_QUICK_START.md .env.local` (follow the guide)
+3. **Install dependencies**: `npm install`
+4. **Start building**: Follow the MVP plan
 
 ## Tech Stack
 
-- **Frontend**: React Native + Expo (cross-platform iOS/Android)
-- **Backend**: Supabase (PostgreSQL, Auth, Real-time, Storage)
-- **AI**: Gemini Flash API for personalized first messages
-- **Key Libraries**: Expo Router, React Native Reanimated, Supabase JS
+- **Frontend**: React Native + Expo
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **AI**: Gemini Flash API
+- **Database**: All tables created and ready
 
-## Project Status
+## Status
 
-🚧 **In Development** - Currently in MVP planning phase
-
-This repository contains the initial project planning, UI sketches, and technical architecture for the Peerly mobile application.
+✅ **Supabase Connected** - Database schema applied, authentication working  
+🚧 **Ready for Development** - Start building your React Native app
 
 ## Documentation
 
-- [MVP Development Plan](./peerly-mobile-mvp.plan.md) - Comprehensive 3-week build timeline and technical specifications
-- UI sketches and wireframes included in project files
-
-## Getting Started
-
-This project is currently in the planning phase. Development will begin following the outlined MVP timeline.
+- [MVP Plan](./peerly-mobile-mvp.plan.md) - 3-week development timeline
+- [Team Setup](./TEAM_QUICK_START.md) - Quick start guide for team members
+- UI sketches and wireframes included
 
 ## License
 
