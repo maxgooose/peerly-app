@@ -19,12 +19,12 @@ A mobile app that connects university students for study partnerships through in
 ## Status
 
 ✅ **Supabase Connected** - Database schema applied, authentication working  
-🚧 **Ready for Development** - Start building your React Native app
+🚧 **Ready for Initial Setup** - Choose your framework and start building
 
 ## Documentation
 
-- [MVP Plan](./peerly-mobile-mvp.plan.md) - 3-week development timeline
-- [Team Setup](./TEAM_QUICK_START.md) - Quick start guide for team members
+- [MVP Plan](./docs/peerly-mobile-mvp.plan.md) - 3-week development timeline
+- [Team Setup](./docs/TEAM_QUICK_START.md) - Quick start guide for team members
 - UI sketches and wireframes included
 
 ## License
