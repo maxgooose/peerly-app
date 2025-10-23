@@ -1,15 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-// Framework-agnostic environment variables
-// Set these in your .env file (or .env.local for Next.js, .env for Expo, etc.)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
+// ✅ Expo automatically loads .env files at the project root
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase credentials. Please check your environment variables.')
+  console.error('Supabase URL or Anon Key missing:');
+  console.log('URL:', supabaseUrl);
+  console.log('Key:', supabaseAnonKey ? '(exists)' : '(missing)');
+  throw new Error('Missing Supabase credentials. Please check your environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Database types (you'll generate these later with supabase gen types)
 export type Database = {
