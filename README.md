@@ -18,8 +18,8 @@ A mobile app that connects university students for study partnerships through in
 
 ## Status
 
-✅ **Supabase Connected** - Database schema applied, authentication working  
-🚧 **Ready for Initial Setup** - Choose your framework and start building
+ **Supabase Connected** - Database schema applied, authentication working  
+ **Ready for Initial Setup** - Choose your framework and start building
 
 ## Documentation
 
