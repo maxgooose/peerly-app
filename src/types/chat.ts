@@ -84,3 +84,84 @@ export interface CreateMediaMessageParams {
   messageType: 'image' | 'file';
   caption?: string;
 }
+
+// =====================================================
+// NEST TYPES
+// =====================================================
+// TypeScript types for the Nests (study groups) system
+
+export interface Nest {
+  id: string;
+  name: string;
+  subject: string;
+  class_name: string | null;
+  description: string | null;
+  university: string;
+  created_by: string;
+  member_limit: number;
+  is_auto_created: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NestMember {
+  id: string;
+  nest_id: string;
+  user_id: string;
+  role: 'creator' | 'member';
+  joined_at: string;
+  user: {
+    id: string;
+    full_name: string | null;
+    profile_photo_url: string | null;
+  };
+}
+
+export interface NestMessage {
+  id: string;
+  nest_id: string;
+  sender_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface NestWithMembers extends Nest {
+  members: NestMember[];
+  member_count: number;
+}
+
+export interface NestMessageWithSender extends NestMessage {
+  sender: {
+    id: string;
+    full_name: string | null;
+    profile_photo_url: string | null;
+  } | null;
+}
+
+// Types for creating/joining nests
+export interface CreateNestParams {
+  name: string;
+  subject: string;
+  class_name?: string;
+  description?: string;
+  member_limit?: number;
+}
+
+export interface JoinNestParams {
+  nestId: string;
+}
+
+export interface SendNestMessageParams {
+  nestId: string;
+  content: string;
+  senderId: string;
+}
+
+export interface SearchNestsParams {
+  subject?: string;
+  university?: string;
+  search?: string; // Search by name or class_name
+  limit?: number;
+}

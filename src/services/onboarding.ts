@@ -10,6 +10,8 @@ export interface OnboardingPayload {
   bio?: string;
   preferredSubjects: string[];
   availability?: WeeklyAvailability | null;
+  studyStyle?: 'quiet' | 'with_music' | 'group_discussion' | 'teach_each_other' | null;
+  studyGoals?: 'ace_exams' | 'understand_concepts' | 'just_pass' | 'make_friends' | null;
 }
 
 // Type alias for the user profile returned after onboarding
@@ -228,7 +230,9 @@ export async function completeOnboarding(payload: OnboardingPayload): Promise<On
     p_year: trimmedYear,
     p_bio: trimmedBio,
     p_preferred_subjects: trimmedSubjects,
-    p_availability: payload.availability ?? null // Convert undefined to null for database
+    p_availability: payload.availability ?? null, // Convert undefined to null for database
+    p_study_style: payload.studyStyle ?? null,
+    p_study_goals: payload.studyGoals ?? null
   });
 
   // Handle RPC errors

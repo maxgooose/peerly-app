@@ -55,9 +55,18 @@ export type Database = {
           has_profile_photo: boolean; // Boolean flag indicating photo exists (from migration 3)
           preferred_subjects: string[] | null; // Array of subjects user wants to study
           availability: WeeklyAvailability | null; // IMPROVED: Properly typed weekly schedule instead of 'any'
+          study_style: 'quiet' | 'with_music' | 'group_discussion' | 'teach_each_other' | null; // How user prefers to study
+          study_goals: 'ace_exams' | 'understand_concepts' | 'just_pass' | 'make_friends' | null; // What user wants to achieve
+          push_token: string | null; // Expo push notification token
+          push_token_updated_at: string | null; // When push token was last updated
           onboarding_completed: boolean; // ADDED: Whether user completed initial profile setup
           onboarding_completed_at: string | null; // ADDED: Timestamp of onboarding completion
           last_auto_match_cycle: string | null; // Timestamp of last auto-matching run
+          badge_display_preference: 'show_all' | 'show_primary' | 'hide_all'; // How to display badges
+          primary_badge_id: string | null; // User's primary/featured badge
+          total_matches: number; // Total number of matches
+          successful_matches: number; // Number of successful matches
+          avg_messages_per_match: number; // Average messages per match
           created_at: string; // Timestamp of account creation
         };
         // Insert type represents data structure for INSERT operations
@@ -74,9 +83,18 @@ export type Database = {
           has_profile_photo?: boolean; // Optional: Defaults to false
           preferred_subjects?: string[] | null;
           availability?: WeeklyAvailability | null;
+          study_style?: 'quiet' | 'with_music' | 'group_discussion' | 'teach_each_other' | null;
+          study_goals?: 'ace_exams' | 'understand_concepts' | 'just_pass' | 'make_friends' | null;
+          push_token?: string | null;
+          push_token_updated_at?: string | null;
           onboarding_completed?: boolean; // Optional: Defaults to false
           onboarding_completed_at?: string | null;
           last_auto_match_cycle?: string | null;
+          badge_display_preference?: 'show_all' | 'show_primary' | 'hide_all';
+          primary_badge_id?: string | null;
+          total_matches?: number;
+          successful_matches?: number;
+          avg_messages_per_match?: number;
           created_at?: string; // Optional: Auto-set to now() if not provided
         };
         // Update type represents data structure for UPDATE operations
@@ -93,9 +111,18 @@ export type Database = {
           has_profile_photo?: boolean;
           preferred_subjects?: string[] | null;
           availability?: WeeklyAvailability | null;
+          study_style?: 'quiet' | 'with_music' | 'group_discussion' | 'teach_each_other' | null;
+          study_goals?: 'ace_exams' | 'understand_concepts' | 'just_pass' | 'make_friends' | null;
+          push_token?: string | null;
+          push_token_updated_at?: string | null;
           onboarding_completed?: boolean;
           onboarding_completed_at?: string | null;
           last_auto_match_cycle?: string | null;
+          badge_display_preference?: 'show_all' | 'show_primary' | 'hide_all';
+          primary_badge_id?: string | null;
+          total_matches?: number;
+          successful_matches?: number;
+          avg_messages_per_match?: number;
           created_at?: string;
         };
       };
@@ -309,6 +336,8 @@ export type Database = {
           p_bio: string | null; // Optional bio
           p_preferred_subjects: string[]; // Array of subjects
           p_availability: WeeklyAvailability | null; // Optional availability schedule
+          p_study_style: 'quiet' | 'with_music' | 'group_discussion' | 'teach_each_other' | null; // How user prefers to study
+          p_study_goals: 'ace_exams' | 'understand_concepts' | 'just_pass' | 'make_friends' | null; // What user wants to achieve
         };
         // Returns the complete updated user record
         Returns: Database['public']['Tables']['users']['Row'];

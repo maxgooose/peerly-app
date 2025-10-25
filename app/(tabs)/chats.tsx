@@ -1,8 +1,8 @@
 // =====================================================
-// CHATS SCREEN - PHASE 2
+// CHATS SCREEN - PHASE 2 + NESTS
 // =====================================================
 // Lists all conversations sorted by recent activity
-// Tapping a conversation navigates to the chat detail screen
+// Now includes segmented control for Direct chats and Nests
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -16,20 +16,25 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/services/supabase';
 import { getConversations, getOtherUser, formatMessageTime } from '@/services/chat';
-import type { ConversationWithMatch } from '@/types/chat';
+import { getNestsForUser } from '@/services/nests';
+import { NestCard } from '@/components/nest/NestCard';
+import type { ConversationWithMatch, NestWithMembers } from '@/types/chat';
 
 export default function ChatsScreen() {
   const router = useRouter();
   const [conversations, setConversations] = useState<ConversationWithMatch[]>([]);
+  const [nests, setNests] = useState<NestWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'direct' | 'nests'>('direct');
 
   useEffect(() => {
     loadCurrentUser();
-    loadConversations();
+    loadData();
   }, []);
 
   async function loadCurrentUser() {
@@ -39,25 +44,49 @@ export default function ChatsScreen() {
     }
   }
 
-  async function loadConversations() {
+  async function loadData() {
     try {
-      const data = await getConversations();
-      setConversations(data);
+      await Promise.all([
+        loadConversations(),
+        loadNests(),
+      ]);
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }
 
+  async function loadConversations() {
+    try {
+      const data = await getConversations();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  }
+
+  async function loadNests() {
+    try {
+      const data = await getNestsForUser();
+      setNests(data);
+    } catch (error) {
+      console.error('Error loading nests:', error);
+    }
+  }
+
   async function handleRefresh() {
     setRefreshing(true);
-    await loadConversations();
+    await loadData();
   }
 
   function handleConversationPress(conversation: ConversationWithMatch) {
     router.push(`/chat/${conversation.id}` as any);
+  }
+
+  function handleNestPress(nest: NestWithMembers) {
+    router.push(`/nest/${nest.id}` as any);
   }
 
   function renderConversation({ item }: { item: ConversationWithMatch }) {
@@ -107,13 +136,79 @@ export default function ChatsScreen() {
     );
   }
 
-  function renderEmptyState() {
+  function renderNest({ item }: { item: NestWithMembers }) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateTitle}>No Conversations Yet</Text>
-        <Text style={styles.emptyStateText}>
-          Your conversations will appear here once you match with someone.
-        </Text>
+      <NestCard
+        nest={item}
+        onPress={() => handleNestPress(item)}
+        lastMessage={undefined} // TODO: Add last message support
+      />
+    );
+  }
+
+  function renderEmptyState() {
+    if (activeTab === 'direct') {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>No Conversations Yet</Text>
+          <Text style={styles.emptyStateText}>
+            Your conversations will appear here once you match with someone.
+          </Text>
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>No Nests Yet</Text>
+          <Text style={styles.emptyStateText}>
+            Join study groups or create your own to start collaborating.
+          </Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push('/nest/create')}
+          >
+            <Text style={styles.createButtonText}>Create Nest</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+  }
+
+  function renderSegmentedControl() {
+    return (
+      <View style={styles.segmentedControl}>
+        <TouchableOpacity
+          style={[
+            styles.segment,
+            activeTab === 'direct' && styles.activeSegment,
+          ]}
+          onPress={() => setActiveTab('direct')}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              activeTab === 'direct' && styles.activeSegmentText,
+            ]}
+          >
+            Direct
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.segment,
+            activeTab === 'nests' && styles.activeSegment,
+          ]}
+          onPress={() => setActiveTab('nests')}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              activeTab === 'nests' && styles.activeSegmentText,
+            ]}
+          >
+            Nests
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -126,15 +221,18 @@ export default function ChatsScreen() {
     );
   }
 
+  const currentData = activeTab === 'direct' ? conversations : nests;
+  const isEmpty = currentData.length === 0;
+
   return (
     <View style={styles.container}>
+      {renderSegmentedControl()}
+      
       <FlatList
-        data={conversations}
-        renderItem={renderConversation}
+        data={currentData}
+        renderItem={activeTab === 'direct' ? renderConversation : renderNest}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={
-          conversations.length === 0 ? styles.emptyListContainer : undefined
-        }
+        contentContainerStyle={isEmpty ? styles.emptyListContainer : undefined}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
@@ -161,6 +259,36 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    margin: 16,
+    padding: 4,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  activeSegment: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#8E8E93',
+  },
+  activeSegmentText: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
   conversationItem: {
     flexDirection: 'row',
@@ -230,5 +358,17 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  createButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
