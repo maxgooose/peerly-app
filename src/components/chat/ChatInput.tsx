@@ -16,22 +16,27 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 interface ChatInputProps {
   onSend: (content: string) => Promise<void>;
+  onSendImage?: (imageUri: string) => Promise<void>;
   placeholder?: string;
   disabled?: boolean;
 }
 
 export function ChatInput({
   onSend,
+  onSendImage,
   placeholder = 'Type a message...',
   disabled = false,
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
 
   const canSend = text.trim().length > 0 && !sending && !disabled;
+  const canSendImage = !sendingImage && !disabled && !!onSendImage;
 
   async function handleSend() {
     if (!canSend) return;
@@ -51,9 +56,65 @@ export function ChatInput({
     }
   }
 
+  async function handleImagePick() {
+    if (!canSendImage) return;
+
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access media library was denied');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSendingImage(true);
+        try {
+          await onSendImage!(result.assets[0].uri);
+        } catch (error) {
+          console.error('Error sending image:', error);
+        } finally {
+          setSendingImage(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
+        {/* Image Picker Button */}
+        {onSendImage && (
+          <TouchableOpacity
+            style={[
+              styles.imageButton,
+              canSendImage ? styles.imageButtonActive : styles.imageButtonDisabled,
+            ]}
+            onPress={handleImagePick}
+            disabled={!canSendImage}
+          >
+            {sendingImage ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : (
+              <Ionicons
+                name="image-outline"
+                size={20}
+                color={canSendImage ? '#007AFF' : '#C7C7CC'}
+              />
+            )}
+          </TouchableOpacity>
+        )}
+
         {/* Text Input */}
         <TextInput
           style={styles.input}
@@ -134,6 +195,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   sendButtonDisabled: {
+    backgroundColor: '#E5E5EA',
+  },
+  imageButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  imageButtonActive: {
+    backgroundColor: '#F2F2F7',
+  },
+  imageButtonDisabled: {
     backgroundColor: '#E5E5EA',
   },
   charCount: {

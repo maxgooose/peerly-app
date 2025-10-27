@@ -6,6 +6,8 @@
 
 import { supabase } from './supabase';
 import type { ConversationWithMatch, MessageWithSender, Message } from '@/types/chat';
+import { checkRateLimitByKey, recordAction } from './rateLimiting';
+import { sanitizeMessage } from '@/utils/sanitization';
 
 /**
  * Get all conversations for the current user
@@ -198,12 +200,11 @@ export async function getOrCreateConversation(matchId: string): Promise<string |
       .single();
 
     if (existing) {
-      return existing.id;
+      return (existing as any).id;
     }
 
     // If not found, create new conversation
-    const { data: newConv, error: createError } = await supabase
-      .from('conversations')
+    const { data: newConv, error: createError } = await (supabase.from('conversations') as any)
       .insert({ match_id: matchId })
       .select('id')
       .single();
@@ -221,6 +222,95 @@ export async function getOrCreateConversation(matchId: string): Promise<string |
 }
 
 /**
+ * Send an image message
+ * Uploads image to Supabase storage and creates message record
+ */
+export async function sendImageMessage(
+  conversationId: string,
+  imageUri: string
+): Promise<{ success: boolean; data?: Message; error?: string }> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check rate limit before uploading image
+    const withinLimit = await checkRateLimitByKey(user.id, 'UPLOAD_IMAGE');
+    if (!withinLimit) {
+      return { 
+        success: false, 
+        error: 'Rate limit exceeded. Please wait before uploading another image.' 
+      };
+    }
+
+    // 1. Upload image to storage
+    const fileName = `${conversationId}/${Date.now()}.jpg`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('chat-media')
+      .upload(fileName, {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: fileName,
+      } as any);
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw uploadError;
+    }
+
+    // 2. Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat-media')
+      .getPublicUrl(fileName);
+
+    // 3. Create message with image URL
+    const { data, error } = await (supabase.from('messages') as any)
+      .insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: null,
+        message_type: 'image',
+        media_url: publicUrl,
+        media_type: 'image/jpeg',
+        status: 'sent',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating image message:', error);
+      throw error;
+    }
+
+    // 4. Update conversation's last message
+    await (supabase.from('conversations') as any)
+      .update({
+        last_message_id: data.id,
+        last_message_content: '📷 Image',
+        last_message_at: data.created_at,
+        last_message_sender_id: user.id,
+        updated_at: data.created_at,
+      })
+      .eq('id', conversationId);
+
+    // Record successful image upload for rate limiting
+    await recordAction(user.id, 'image_uploaded', {
+      conversation_id: conversationId,
+      file_name: fileName
+    });
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error in sendImageMessage:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to send image' 
+    };
+  }
+}
+
+/**
  * Send a text message
  * Returns optimistic message immediately, then updates with server response
  * Phase 3: New function
@@ -233,12 +323,21 @@ export async function sendMessage(params: {
 }): Promise<Message> {
   const clientId = params.clientId || `temp_${Date.now()}_${Math.random()}`;
 
+  // Check rate limit before sending message
+  const withinLimit = await checkRateLimitByKey(params.senderId, 'SEND_MESSAGE');
+  if (!withinLimit) {
+    throw new Error('Rate limit exceeded. Please wait before sending another message.');
+  }
+
+  // Sanitize message content
+  const sanitizedContent = sanitizeMessage(params.content);
+
   // Create optimistic message object
   const optimisticMessage: Message = {
     id: clientId, // Temporary ID
     conversation_id: params.conversationId,
     sender_id: params.senderId,
-    content: params.content,
+    content: sanitizedContent,
     message_type: 'text',
     media_url: null,
     media_type: null,
@@ -254,12 +353,11 @@ export async function sendMessage(params: {
 
   try {
     // Insert into database
-    const { data, error } = await supabase
-      .from('messages')
+    const { data, error } = await (supabase.from('messages') as any)
       .insert({
         conversation_id: params.conversationId,
         sender_id: params.senderId,
-        content: params.content,
+        content: sanitizedContent,
         message_type: 'text',
         status: 'sent',
         client_id: clientId,
@@ -271,6 +369,12 @@ export async function sendMessage(params: {
       console.error('Error sending message:', error);
       throw error;
     }
+
+    // Record successful message send for rate limiting
+    await recordAction(params.senderId, 'message_sent', {
+      conversation_id: params.conversationId,
+      message_length: params.content.length
+    });
 
     return data as Message;
   } catch (error) {

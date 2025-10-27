@@ -1,14 +1,21 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NestMember } from '@/types/chat';
 
 interface NestMemberItemProps {
   member: NestMember;
+  onPress?: (userId: string) => void;
 }
 
-export function NestMemberItem({ member }: NestMemberItemProps) {
+export function NestMemberItem({ member, onPress }: NestMemberItemProps) {
+  const handlePress = () => {
+    if (onPress) {
+      onPress(member.user_id);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.7}>
       <Image
         source={{ 
           uri: member.user.profile_photo_url || 'https://via.placeholder.com/40' 
@@ -30,7 +37,7 @@ export function NestMemberItem({ member }: NestMemberItemProps) {
           Joined {new Date(member.joined_at).toLocaleDateString()}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

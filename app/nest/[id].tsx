@@ -38,11 +38,20 @@ export default function NestChatScreen() {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
 
-  const currentUserId = supabase.auth.getUser().then(user => user.data.user?.id);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     initializeNest();
     subscribeToMessages();
+    
+    // Load current user ID
+    const loadCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    loadCurrentUser();
     
     return () => {
       // Cleanup subscription
@@ -285,7 +294,7 @@ export default function NestChatScreen() {
         members={nest.members}
         nestId={nest.id}
         nestName={nest.name}
-        isCreator={nest.created_by === (await currentUserId)}
+        isCreator={nest.created_by === currentUserId}
         onNestDeleted={() => router.back()}
         onMemberLeft={() => router.back()}
       />

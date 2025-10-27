@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { sanitizeName, sanitizeProfileText } from '@/utils/sanitization';
 
 const MAJORS = [
   'Computer Science',
@@ -40,7 +41,11 @@ export default function BasicInfoScreen() {
   const [showYearPicker, setShowYearPicker] = useState(false);
 
   function handleContinue() {
-    if (!fullName.trim()) {
+    // Sanitize inputs
+    const sanitizedFullName = sanitizeName(fullName);
+    const sanitizedBio = sanitizeProfileText(bio);
+
+    if (!sanitizedFullName.trim()) {
       Alert.alert('Required', 'Please enter your full name');
       return;
     }
@@ -53,10 +58,15 @@ export default function BasicInfoScreen() {
       return;
     }
 
-    // Store in context or navigation params
+    // Store in context or navigation params with sanitized data
     router.push({
       pathname: '/onboarding/subjects',
-      params: { fullName, major, year, bio },
+      params: { 
+        fullName: sanitizedFullName, 
+        major, 
+        year, 
+        bio: sanitizedBio 
+      },
     });
   }
 

@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/services/supabase';
-import { getMessages, getConversation, getOtherUser, sendMessage } from '@/services/chat';
+import { getMessages, getConversation, getOtherUser, sendMessage, sendImageMessage } from '@/services/chat';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import type { MessageWithSender, ConversationWithMatch, Message } from '@/types/chat';
@@ -304,6 +304,76 @@ export default function ChatDetailScreen() {
     }
   }
 
+  async function handleSendImage(imageUri: string) {
+    if (!currentUserId || !id || typeof id !== 'string') {
+      console.error('Missing currentUserId or conversation id');
+      return;
+    }
+
+    try {
+      // Create optimistic message to show immediately
+      const optimisticMessage: MessageWithSender = {
+        id: `temp_${Date.now()}`,
+        conversation_id: id,
+        sender_id: currentUserId,
+        content: null,
+        message_type: 'image',
+        media_url: imageUri, // Show local URI immediately
+        media_type: 'image/jpeg',
+        media_size: null,
+        thumbnail_url: null,
+        status: 'sending',
+        is_ai_generated: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deleted_at: null,
+        client_id: `temp_${Date.now()}_${Math.random()}`,
+        sender: {
+          id: currentUserId,
+          full_name: null,
+          profile_photo_url: null,
+        },
+      };
+
+      // Add optimistic message to UI immediately
+      setMessages((prev) => [...prev, optimisticMessage]);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      // Send to server
+      const result = await sendImageMessage(id, imageUri);
+
+      if (result.success && result.data) {
+        // Update the optimistic message with the real one
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id.startsWith('temp_') && msg.client_id === optimisticMessage.client_id
+              ? {
+                  ...result.data!,
+                  sender: optimisticMessage.sender,
+                } as MessageWithSender
+              : msg
+          )
+        );
+      } else {
+        throw new Error(result.error || 'Failed to send image');
+      }
+    } catch (error) {
+      console.error('Error sending image:', error);
+      // Mark message as failed
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id.startsWith('temp_') && msg.created_at === new Date().toISOString()
+            ? { ...msg, status: 'failed' as const }
+            : msg
+        )
+      );
+    }
+  }
+
   function renderEmptyState() {
     return (
       <View style={styles.emptyState}>
@@ -371,6 +441,7 @@ export default function ChatDetailScreen() {
         {/* Chat Input - Phase 3 */}
         <ChatInput
           onSend={handleSendMessage}
+          onSendImage={handleSendImage}
           disabled={!currentUserId}
         />
       </KeyboardAvoidingView>

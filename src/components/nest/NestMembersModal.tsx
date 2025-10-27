@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { NestMember } from '@/types/chat';
 import { NestMemberItem } from './NestMemberItem';
+import { UserProfileModal } from './UserProfileModal';
 import { leaveNest, deleteNest } from '@/services/nests';
 
 interface NestMembersModalProps {
@@ -34,6 +35,18 @@ export function NestMembersModal({
   onNestDeleted,
   onMemberLeft,
 }: NestMembersModalProps) {
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const handleMemberPress = (userId: string) => {
+    setSelectedUserId(userId);
+    setProfileModalVisible(true);
+  };
+
+  const handleProfileModalClose = () => {
+    setProfileModalVisible(false);
+    setSelectedUserId(null);
+  };
   const handleLeaveNest = () => {
     Alert.alert(
       'Leave Nest',
@@ -81,7 +94,7 @@ export function NestMembersModal({
   };
 
   const renderMember = ({ item }: { item: NestMember }) => (
-    <NestMemberItem member={item} />
+    <NestMemberItem member={item} onPress={handleMemberPress} />
   );
 
   return (
@@ -132,6 +145,15 @@ export function NestMembersModal({
           )}
         </View>
       </View>
+
+      {/* User Profile Modal */}
+      {selectedUserId && (
+        <UserProfileModal
+          visible={profileModalVisible}
+          onClose={handleProfileModalClose}
+          userId={selectedUserId}
+        />
+      )}
     </Modal>
   );
 }

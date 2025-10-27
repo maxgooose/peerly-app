@@ -5,8 +5,8 @@
 // Shows text content and timestamp
 // Phase 9 will add image support, Phase 10 will add file support
 
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import type { MessageWithSender, NestMessageWithSender } from '@/types/chat';
 import { formatMessageTime } from '@/services/chat';
 
@@ -17,6 +17,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isCurrentUser, showSender = false }: MessageBubbleProps) {
+  const [showFullImage, setShowFullImage] = useState(false);
   const senderName = 'sender' in message ? message.sender?.full_name : null;
   const senderAvatar = 'sender' in message ? message.sender?.profile_photo_url : null;
 
@@ -61,6 +62,17 @@ export function MessageBubble({ message, isCurrentUser, showSender = false }: Me
             </Text>
           )}
 
+          {/* Image Content */}
+          {message.message_type === 'image' && message.media_url && (
+            <TouchableOpacity onPress={() => setShowFullImage(true)}>
+              <Image 
+                source={{ uri: message.media_url }} 
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
+
           {/* Timestamp and Status */}
           <View style={styles.footer}>
             <Text
@@ -84,6 +96,24 @@ export function MessageBubble({ message, isCurrentUser, showSender = false }: Me
           </View>
         </View>
       </View>
+
+      {/* Full-screen image modal */}
+      <Modal visible={showFullImage} transparent animationType="fade">
+        <View style={styles.imageModalOverlay}>
+          <TouchableOpacity 
+            style={styles.imageModalCloseArea} 
+            onPress={() => setShowFullImage(false)}
+          >
+            <View style={styles.imageModalContent}>
+              <Image 
+                source={{ uri: message.media_url }} 
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -166,5 +196,34 @@ const styles = StyleSheet.create({
   statusIndicator: {
     fontSize: 11,
     color: 'rgba(255, 255, 255, 0.7)',
+  },
+  // Image styles
+  messageImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalCloseArea: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  fullScreenImage: {
+    width: '90%',
+    height: '80%',
   },
 });

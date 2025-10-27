@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { User } from './supabase';
 import { getOrCreateConversation } from './chat';
+import { checkRateLimitByKey, recordAction } from './rateLimiting';
 
 // Simplified availability type - just time of day
 export type AvailabilitySlot = 'morning' | 'afternoon' | 'evening' | 'none';
@@ -499,6 +500,153 @@ export async function refreshUserMatchStats(userId: string): Promise<void> {
 
   if (error) {
     console.error('Error refreshing user match stats:', error);
+  }
+}
+
+/**
+ * Check if a match already exists between two users
+ * @param userId1 - First user ID
+ * @param userId2 - Second user ID
+ * @returns match_id if found, null otherwise
+ */
+export async function checkExistingMatch(userId1: string, userId2: string): Promise<string | null> {
+  try {
+    const { data, error } = await (supabase.from('matches') as any)
+      .select('id')
+      .or(
+        `and(user1_id.eq.${userId1},user2_id.eq.${userId2}),and(user1_id.eq.${userId2},user2_id.eq.${userId1})`
+      )
+      .eq('status', 'active')
+      .single();
+
+    if (error) {
+      // No match found
+      return null;
+    }
+
+    return (data as any)?.id || null;
+  } catch (error) {
+    console.error('Error checking existing match:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a manual match between two users
+ * @param userId1 - First user ID
+ * @param userId2 - Second user ID
+ * @returns match_id if successful, null otherwise
+ */
+export async function createManualMatch(userId1: string, userId2: string): Promise<string | null> {
+  try {
+    // Check rate limit for match creation
+    const withinLimit = await checkRateLimitByKey(userId1, 'CREATE_MATCH');
+    if (!withinLimit) {
+      throw new Error('Rate limit exceeded. Please wait before creating another match.');
+    }
+
+    const { data, error } = await (supabase.from('matches') as any)
+      .insert({
+        user1_id: userId1,
+        user2_id: userId2,
+        match_type: 'manual',
+        status: 'active',
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error creating manual match:', error);
+      throw error;
+    }
+
+    // Record successful match creation for rate limiting
+    await recordAction(userId1, 'match_created', {
+      match_id: (data as any).id,
+      partner_id: userId2,
+      source: 'nest_profile'
+    });
+
+    return (data as any)?.id || null;
+  } catch (error) {
+    console.error('Error in createManualMatch:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get eligible matches for a user (for swipe UI)
+ * Returns users who haven't been swiped on and are eligible for matching
+ */
+export async function getEligibleMatches(userId: string): Promise<User[]> {
+  try {
+    // Get user's university to filter matches
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('university')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !currentUser?.university) {
+      console.error('Error fetching current user:', userError);
+      return [];
+    }
+
+    // Get users who:
+    // 1. Are from the same university
+    // 2. Have completed onboarding
+    // 3. Haven't been swiped on by current user
+    // 4. Haven't already matched with current user
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        total_matches,
+        successful_matches,
+        avg_messages_per_match
+      `)
+      .eq('university', currentUser.university)
+      .eq('onboarding_completed', true)
+      .neq('id', userId)
+      .limit(20);
+
+    if (error) {
+      console.error('Error fetching eligible matches:', error);
+      return [];
+    }
+
+    // Filter out users who have already been swiped on or matched
+    const eligibleUsers: User[] = [];
+    
+    for (const user of data || []) {
+      // Check if already swiped on
+      const { data: swipeData } = await supabase
+        .from('swipe_actions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('target_user_id', user.id)
+        .limit(1);
+
+      if (swipeData && swipeData.length > 0) continue;
+
+      // Check if already matched
+      const { data: matchData } = await supabase
+        .from('matches')
+        .select('id')
+        .or(
+          `and(user1_id.eq.${userId},user2_id.eq.${user.id}),and(user1_id.eq.${user.id},user2_id.eq.${userId})`
+        )
+        .limit(1);
+
+      if (matchData && matchData.length > 0) continue;
+
+      eligibleUsers.push(user as User);
+    }
+
+    return eligibleUsers;
+  } catch (error) {
+    console.error('Error in getEligibleMatches:', error);
+    return [];
   }
 }
 

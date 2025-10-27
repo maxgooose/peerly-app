@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
-import { supabase } from '@services/supabase';
+import { supabase } from '@/services/supabase';
+import { getEligibleMatches } from '@/services/matching';
+import { checkRateLimitByKey, recordAction } from '@/services/rateLimiting';
 
 const { width } = Dimensions.get('window');
 
@@ -40,18 +42,24 @@ const MOCK_PROFILES: User[] = [
 export default function MatchesScreen() {
   const [profiles, setProfiles] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchedUser, setMatchedUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      // (Optional) Exclude current user once auth wired:
-      // const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('No authenticated user');
+          setLoading(false);
+          return;
+        }
 
-      const { data, error } = await supabase.from('users').select('*').limit(20);
-      if (error) {
+        const eligible = await getEligibleMatches(user.id);
+        console.log('Fetched eligible matches:', eligible);
+        setProfiles(eligible);
+      } catch (error) {
         console.error('Error fetching profiles:', error);
-      } else {
-        console.log('Fetched profiles:', data);
-        setProfiles((data || []) as User[]);
       }
       setLoading(false);
     };
@@ -63,16 +71,86 @@ export default function MatchesScreen() {
     if (!swipedUser) return;
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check rate limit before swipe action
+      const withinLimit = await checkRateLimitByKey(user.id, 'SWIPE_ACTION');
+      if (!withinLimit) {
+        console.log('Rate limit exceeded for swipe actions');
+        return;
+      }
+
       const action = direction === 'right' ? 'like' : 'skip';
-      // TODO: replace with actual session user ID
-      await supabase.from('swipe_actions').insert([
-        {
-          user_id: 'CURRENT_USER_ID',
-          target_user_id: swipedUser.id,
-          action,
-        },
-      ]);
-      console.log(`Swiped ${direction} on ${swipedUser.full_name}`);
+      
+      // Record the swipe action
+      try {
+        await (supabase.from('swipe_actions') as any).insert([
+          {
+            user_id: user.id,
+            target_user_id: swipedUser.id,
+            action,
+          },
+        ]);
+            } catch (insertError) {
+              console.error('Error inserting swipe action:', insertError);
+            }
+
+            // Record successful swipe action for rate limiting
+            await recordAction(user.id, 'swipe_action', {
+              target_user_id: swipedUser.id,
+              action: action
+            });
+
+            console.log(`Swiped ${direction} on ${swipedUser.full_name}`);
+
+      // If it's a like, check for mutual match
+      if (direction === 'right') {
+        const { data: mutualSwipe } = await supabase
+          .from('swipe_actions')
+          .select('*')
+          .eq('user_id', swipedUser.id)
+          .eq('target_user_id', user.id)
+          .eq('action', 'like')
+          .single();
+        
+              if (mutualSwipe) {
+                // Check rate limit for match creation
+                const withinMatchLimit = await checkRateLimitByKey(user.id, 'CREATE_MATCH');
+                if (!withinMatchLimit) {
+                  console.log('Rate limit exceeded for match creation');
+                  return;
+                }
+
+                // Create match
+                try {
+                  const { data: matchData } = await (supabase.from('matches') as any)
+                    .insert({
+                      user1_id: user.id,
+                      user2_id: swipedUser.id,
+                      match_type: 'manual',
+                      status: 'active',
+                    })
+                    .select()
+                    .single();
+
+                  if (matchData) {
+                    // Record successful match creation for rate limiting
+                    await recordAction(user.id, 'match_created', {
+                      match_id: matchData.id,
+                      partner_id: swipedUser.id
+                    });
+
+                    // Show match modal
+                    setMatchedUser(swipedUser);
+                    setShowMatchModal(true);
+                    console.log('It\'s a match!', matchData);
+                  }
+                } catch (matchError) {
+                  console.error('Error creating match:', matchError);
+                }
+              }
+      }
     } catch (err) {
       console.error('Swipe error:', err);
     }
@@ -117,7 +195,39 @@ export default function MatchesScreen() {
         stackSize={2}
         animateCardOpacity
       />
+      
+      <MatchModal
+        user={matchedUser}
+        visible={showMatchModal}
+        onClose={() => {
+          setShowMatchModal(false);
+          setMatchedUser(null);
+        }}
+      />
     </View>
+  );
+}
+
+function MatchModal({ user, visible, onClose }: { user: User | null; visible: boolean; onClose: () => void }) {
+  if (!user) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.matchModal}>
+          <Text style={styles.matchTitle}>It's a Match! 🎉</Text>
+          <Image 
+            source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/200x200.png?text=Peerly' }} 
+            style={styles.matchImage}
+          />
+          <Text style={styles.matchName}>{user.full_name}</Text>
+          <Text style={styles.matchSubtext}>You both liked each other!</Text>
+          <TouchableOpacity style={styles.matchButton} onPress={onClose}>
+            <Text style={styles.matchButtonText}>Start Chatting</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -199,4 +309,55 @@ const styles = StyleSheet.create({
   skip: { borderWidth: 1, borderColor: '#ccc' },
   message: { backgroundColor: '#A67B5B' },
   btnText: { fontWeight: '600' },
+  // Match Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  matchModal: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    width: width * 0.8,
+    maxWidth: 300,
+  },
+  matchTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  matchImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 15,
+  },
+  matchName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  matchSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+  matchButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  matchButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
