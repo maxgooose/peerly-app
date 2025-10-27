@@ -430,9 +430,9 @@ export default function ChatDetailScreen() {
           onEndReachedThreshold={0.5}
           ListHeaderComponent={
             loadingOlderMessages ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.paginationLoadingContainer}>
                 <ActivityIndicator size="small" color="#007AFF" />
-                <Text style={styles.loadingText}>Loading older messages...</Text>
+                <Text style={styles.paginationLoadingText}>Loading older messages...</Text>
               </View>
             ) : null
           }
@@ -484,14 +484,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // Phase 5: Pagination loading styles
-  loadingContainer: {
+  paginationLoadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  loadingText: {
+  paginationLoadingText: {
     marginLeft: 8,
     fontSize: 14,
     color: '#8E8E93',

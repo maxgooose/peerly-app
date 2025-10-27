@@ -224,13 +224,22 @@ export default function ChatsScreen() {
   const currentData = activeTab === 'direct' ? conversations : nests;
   const isEmpty = currentData.length === 0;
 
+  // Type-safe render handler
+  const renderItem = ({ item }: { item: ConversationWithMatch | NestWithMembers }) => {
+    if (activeTab === 'direct') {
+      return renderConversation({ item: item as ConversationWithMatch });
+    } else {
+      return renderNest({ item: item as NestWithMembers });
+    }
+  };
+
   return (
     <View style={styles.container}>
       {renderSegmentedControl()}
       
       <FlatList
-        data={currentData}
-        renderItem={activeTab === 'direct' ? renderConversation : renderNest}
+        data={currentData as any}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={isEmpty ? styles.emptyListContainer : undefined}
         ListEmptyComponent={renderEmptyState}
