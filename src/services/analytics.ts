@@ -148,7 +148,7 @@ function getDeviceInfo() {
  * Track an analytics event
  */
 export async function trackEvent(params: {
-  eventType: string;
+  eventType: string; // Event type from AnalyticsEvents object
   category: EventCategory;
   properties?: Record<string, any>;
   userId?: string;
@@ -162,12 +162,12 @@ export async function trackEvent(params: {
     }
 
     // Don't track if no user (except for certain events)
-    const allowedAnonymousEvents = [
+    const allowedAnonymousEvents: string[] = [
       AnalyticsEvents.APP_OPENED,
       AnalyticsEvents.ONBOARDING_STARTED,
     ];
 
-    if (!userId && !allowedAnonymousEvents.includes(params.eventType)) {
+    if (!userId && !allowedAnonymousEvents.includes(params.eventType as string)) {
       return;
     }
 
@@ -319,7 +319,7 @@ export async function getAnalyticsDashboard(params: {
 
     // Aggregate retention by day
     const retentionMap = new Map<number, number[]>();
-    retentionData?.forEach(item => {
+    retentionData?.forEach((item: any) => {
       if (!retentionMap.has(item.day_number)) {
         retentionMap.set(item.day_number, []);
       }
@@ -336,7 +336,7 @@ export async function getAnalyticsDashboard(params: {
     return {
       success: true,
       data: {
-        dailyActiveUsers: dauData?.map(d => parseFloat(d.metric_value.toString())) || [],
+        dailyActiveUsers: dauData?.map((d: any) => parseFloat(d.metric_value.toString())) || [],
         totalUsers: totalUsers || 0,
         totalMatches: totalMatches || 0,
         totalMessages: totalMessages || 0,
@@ -381,9 +381,9 @@ export async function getUserAnalytics(userId: string, days: number = 30): Promi
 
     if (engagementError) throw engagementError;
 
-    const totalMessages = engagementData?.reduce((sum, day) => sum + (day.messages_sent || 0), 0) || 0;
-    const totalMatches = engagementData?.reduce((sum, day) => sum + (day.matches_made || 0), 0) || 0;
-    const studySessionsCompleted = engagementData?.reduce((sum, day) => sum + (day.study_sessions_completed || 0), 0) || 0;
+    const totalMessages = engagementData?.reduce((sum: number, day: any) => sum + (day.messages_sent || 0), 0) || 0;
+    const totalMatches = engagementData?.reduce((sum: number, day: any) => sum + (day.matches_made || 0), 0) || 0;
+    const studySessionsCompleted = engagementData?.reduce((sum: number, day: any) => sum + (day.study_sessions_completed || 0), 0) || 0;
     const avgDailyEngagement = engagementData?.length ? totalMessages / engagementData.length : 0;
 
     // Calculate streak

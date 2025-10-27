@@ -62,11 +62,11 @@ export function MessageBubble({ message, isCurrentUser, showSender = false }: Me
             </Text>
           )}
 
-          {/* Image Content */}
-          {message.message_type === 'image' && message.media_url && (
+          {/* Image Content - Only for regular messages, not nest messages */}
+          {'message_type' in message && 'media_url' in message && message.message_type === 'image' && message.media_url && (
             <TouchableOpacity onPress={() => setShowFullImage(true)}>
-              <Image 
-                source={{ uri: message.media_url }} 
+              <Image
+                source={{ uri: message.media_url }}
                 style={styles.messageImage}
                 resizeMode="cover"
               />
@@ -105,8 +105,8 @@ export function MessageBubble({ message, isCurrentUser, showSender = false }: Me
             onPress={() => setShowFullImage(false)}
           >
             <View style={styles.imageModalContent}>
-              <Image 
-                source={{ uri: message.media_url }} 
+              <Image
+                source={{ uri: 'media_url' in message && message.media_url ? message.media_url : undefined }}
                 style={styles.fullScreenImage}
                 resizeMode="contain"
               />

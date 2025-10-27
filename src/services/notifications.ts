@@ -9,6 +9,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -179,8 +181,8 @@ export async function sendNestMessageNotification(params: {
 
     // Send notification to all members with push tokens
     const notifications = members
-      .filter(member => member.user?.push_token)
-      .map(member => ({
+      .filter((member: any) => member.user?.push_token)
+      .map((member: any) => ({
         expoPushToken: member.user!.push_token!,
         title: `${params.nestName}`,
         body: `${params.senderName}: ${params.messageContent}`,
@@ -192,7 +194,7 @@ export async function sendNestMessageNotification(params: {
 
     // Send all notifications
     const results = await Promise.all(
-      notifications.map(notification => sendPushNotification(notification))
+      notifications.map((notification: any) => sendPushNotification(notification))
     );
 
     return results.some(result => result);

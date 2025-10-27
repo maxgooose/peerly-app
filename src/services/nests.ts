@@ -102,7 +102,7 @@ export async function getNestsForUser(): Promise<NestWithMembers[]> {
 
     // Get member counts for each nest
     const nestsWithMembers = await Promise.all(
-      (data || []).map(async (item) => {
+      (data || []).map(async (item: any) => {
         const nest = item.nest as Nest;
         const memberCount = await getNestMemberCount(nest.id);
         const members = await getNestMembers(nest.id);
@@ -396,7 +396,7 @@ export async function searchNests(params: SearchNestsParams): Promise<NestWithMe
     }
 
     // Transform to NestWithMembers format
-    const nestsWithMembers = (data || []).map(nest => ({
+    const nestsWithMembers = (data || []).map((nest: any) => ({
       ...nest,
       member_count: nest.members?.length || 0,
     })) as NestWithMembers[];
@@ -542,8 +542,8 @@ export async function getSuggestedNests(): Promise<NestWithMembers[]> {
     // Filter out nests user is already a member of
     const userNestIds = await getUserNestIds(user.id);
     const suggestedNests = (data || [])
-      .filter(nest => !userNestIds.includes(nest.id))
-      .map(nest => ({
+      .filter((nest: any) => !userNestIds.includes(nest.id))
+      .map((nest: any) => ({
         ...nest,
         member_count: nest.members?.length || 0,
       })) as NestWithMembers[];
@@ -570,7 +570,7 @@ async function getUserNestIds(userId: string): Promise<string[]> {
       return [];
     }
 
-    return (data || []).map(item => item.nest_id);
+    return (data || []).map((item: any) => item.nest_id);
   } catch (error) {
     console.error('getUserNestIds error:', error);
     return [];

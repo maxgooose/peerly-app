@@ -68,9 +68,9 @@ export function Input({
       <TextInput
         style={[
           styles.input,
-          error && styles.inputError,
+          error ? styles.inputError : undefined,
           style,
-        ]}
+        ].filter(Boolean)}
         placeholderTextColor={colors.textLight}
         {...props}
       />

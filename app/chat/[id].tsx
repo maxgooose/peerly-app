@@ -60,7 +60,7 @@ export default function ChatDetailScreen() {
           table: 'messages',
           filter: `conversation_id=eq.${id}`,
         },
-        (payload) => {
+        (payload: any) => {
           console.log('📨 New message received:', payload);
           handleRealtimeMessage(payload.new as Message);
         }
@@ -73,12 +73,12 @@ export default function ChatDetailScreen() {
           table: 'messages',
           filter: `conversation_id=eq.${id}`,
         },
-        (payload) => {
+        (payload: any) => {
           console.log('🔄 Message updated:', payload);
           handleRealtimeMessageUpdate(payload.new as Message);
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         console.log('📡 Realtime subscription status:', status);
       });
 

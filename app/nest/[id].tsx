@@ -147,7 +147,7 @@ export default function NestChatScreen() {
           table: 'nest_messages',
           filter: `nest_id=eq.${id}`,
         },
-        async (payload) => {
+        async (payload: any) => {
           const newMessage = payload.new as NestMessageWithSender;
           
           // Get sender info
@@ -283,8 +283,6 @@ export default function NestChatScreen() {
       {/* Input */}
       <ChatInput
         onSend={handleSendMessage}
-        onTyping={() => {}} // TODO: Implement typing indicators for nests
-        onStopTyping={() => {}}
       />
 
       {/* Members Modal */}

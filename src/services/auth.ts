@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { validateUniversityEmail, EmailValidationResult } from '../utils/emailValidation';
+import type { User } from '@supabase/supabase-js';
 
 export interface SignUpData {
   email: string;
@@ -14,7 +15,7 @@ export interface SignInData {
 
 export interface AuthResult {
   success: boolean;
-  user?: any;
+  user?: User | null;
   error?: string;
   emailValidation?: EmailValidationResult;
 }

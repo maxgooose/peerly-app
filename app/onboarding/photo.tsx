@@ -144,7 +144,7 @@ export default function PhotoScreen() {
       }
 
       // 6. Navigate to main app
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/matches');
     } catch (error) {
       Alert.alert('Error', 'Failed to complete onboarding. Please try again.');
       console.error('Onboarding error:', error);
