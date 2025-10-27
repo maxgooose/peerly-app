@@ -300,6 +300,99 @@ export type Database = {
           created_at?: string;
         };
       };
+      nests: {
+        Row: {
+          id: string;
+          name: string;
+          subject: string;
+          class_name: string | null;
+          description: string | null;
+          university: string;
+          created_by: string;
+          member_limit: number;
+          is_auto_created: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          subject: string;
+          class_name?: string | null;
+          description?: string | null;
+          university: string;
+          created_by: string;
+          member_limit?: number;
+          is_auto_created?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          subject?: string;
+          class_name?: string | null;
+          description?: string | null;
+          university?: string;
+          created_by?: string;
+          member_limit?: number;
+          is_auto_created?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      nest_members: {
+        Row: {
+          id: string;
+          nest_id: string;
+          user_id: string;
+          role: 'creator' | 'member';
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          nest_id: string;
+          user_id: string;
+          role?: 'creator' | 'member';
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          nest_id?: string;
+          user_id?: string;
+          role?: 'creator' | 'member';
+          joined_at?: string;
+        };
+      };
+      nest_messages: {
+        Row: {
+          id: string;
+          nest_id: string;
+          sender_id: string | null;
+          content: string;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          nest_id: string;
+          sender_id?: string | null;
+          content: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          nest_id?: string;
+          sender_id?: string | null;
+          content?: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+      };
     };
     // Database views - read-only virtual tables
     Views: {
@@ -354,6 +447,18 @@ export type Database = {
         Args: { email: string };
         Returns: string; // University name (e.g., "Stanford")
       };
+      increment_match_messages: {
+        // Function to increment message count for a match
+        // Defined in migration 20241024000006_add_match_success_tracking.sql
+        Args: { p_match_id: string }; // Match ID to update
+        Returns: void; // No return value
+      };
+      update_user_match_stats: {
+        // Function to recalculate and update user match statistics
+        // Defined in migration 20241024000006_add_match_success_tracking.sql
+        Args: { user_id: string }; // User ID to update stats for
+        Returns: void; // No return value
+      };
     };
     // Enums - no custom enums defined in this database
     Enums: Record<string, never>;
@@ -363,7 +468,7 @@ export type Database = {
 };
 
 // Create and export the Supabase client with typed database schema
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey) as any; // Using 'as any' to bypass incomplete type definitions
 
 // Helper types for better developer experience
 // These provide shorter, more convenient type names for common operations

@@ -22,8 +22,8 @@ export async function uploadProfilePhoto(
 ): Promise<UploadPhotoResult> {
   try {
     // 1. Read the file as base64
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+    const base64 = await (FileSystem as any).readAsStringAsync(uri, {
+      encoding: 'base64',
     });
 
     // 2. Determine file extension from URI
@@ -31,8 +31,9 @@ export async function uploadProfilePhoto(
     const contentType = getContentType(ext);
 
     // 3. Generate unique filename
-    const fileName = `${userId}-${Date.now()}.${ext}`;
-    const filePath = `avatars/${fileName}`;
+    // Safwan's migration expects: {userId}/filename
+    const fileName = `avatar-${Date.now()}.${ext}`;
+    const filePath = `${userId}/${fileName}`;
 
     // 4. Convert base64 to ArrayBuffer for upload
     const arrayBuffer = decode(base64);
