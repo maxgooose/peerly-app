@@ -3,6 +3,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Gemini API configuration
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
 // Helper function to send push notification
 async function sendPushNotification(params: {
   expoPushToken: string;
@@ -208,6 +212,97 @@ function calculateCompatibilityScore(user1: User, user2: User): CompatibilitySco
   return { total, breakdown };
 }
 
+// Generate AI-powered first message using Gemini
+async function generateFirstMessage(user1: User, user2: User): Promise<string | null> {
+  try {
+    if (!GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY not configured');
+      return null;
+    }
+
+    // Extract common interests
+    const subjects1 = user1.preferred_subjects || [];
+    const subjects2 = user2.preferred_subjects || [];
+    const commonSubjects = subjects1.filter(s =>
+      subjects2.some(s2 => s2.toLowerCase() === s.toLowerCase())
+    );
+
+    // Build context for Gemini
+    const prompt = `You are helping a college student write a friendly first message to a study buddy match on Peerly.
+
+SENDER PROFILE:
+- Name: ${user1.full_name || 'Student'}
+- Major: ${user1.major || 'Not specified'}
+- Year: ${user1.year || 'Not specified'}
+- University: ${user1.university || 'Not specified'}
+- Subjects: ${subjects1.join(', ') || 'Not specified'}
+- Study Style: ${user1.study_style || 'Not specified'}
+- Study Goals: ${user1.study_goals || 'Not specified'}
+${user1.bio ? `- Bio: ${user1.bio}` : ''}
+
+RECIPIENT PROFILE:
+- Name: ${user2.full_name || 'Student'}
+- Major: ${user2.major || 'Not specified'}
+- Year: ${user2.year || 'Not specified'}
+- University: ${user2.university || 'Not specified'}
+- Subjects: ${subjects2.join(', ') || 'Not specified'}
+- Study Style: ${user2.study_style || 'Not specified'}
+- Study Goals: ${user2.study_goals || 'Not specified'}
+${user2.bio ? `- Bio: ${user2.bio}` : ''}
+
+COMMON GROUND:
+${commonSubjects.length > 0 ? `- Shared Subjects: ${commonSubjects.join(', ')}` : '- No shared subjects listed'}
+
+INSTRUCTIONS:
+Generate a warm, friendly first message from ${user1.full_name} to ${user2.full_name} that:
+1. Is casual and authentic (like a real college student would write)
+2. References at least one specific thing they have in common
+3. Shows genuine interest in studying together
+4. Includes a question or conversation starter
+5. Is 2-3 sentences (50-100 words)
+6. Does NOT include greetings like "Hey!" or "Hi!" at the start
+7. Does NOT include the sender's name
+
+Generate only the message text, nothing else.`;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.9,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 200,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Gemini API error:', response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    const message = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!message) {
+      console.error('No message generated from Gemini');
+      return null;
+    }
+
+    return message
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .replace(/\n+/g, ' ')
+      .trim();
+  } catch (error) {
+    console.error('Error generating first message:', error);
+    return null;
+  }
+}
+
 // Main handler
 Deno.serve(async (req) => {
   try {
@@ -327,6 +422,38 @@ Deno.serve(async (req) => {
         errors.push(`Failed to create conversation: ${convError.message}`);
       } else {
         console.log(`Created conversation ${convData.id}`);
+
+        // Generate and send AI-powered first message
+        const aiMessage = await generateFirstMessage(user, bestMatch.candidate);
+
+        if (aiMessage) {
+          // Store the AI-generated message in the messages table
+          const { error: messageError } = await supabase
+            .from('messages')
+            .insert({
+              conversation_id: convData.id,
+              match_id: matchData.id,
+              sender_id: user.id,
+              content: aiMessage,
+              is_ai_generated: true,
+              message_type: 'text',
+              status: 'sent',
+            });
+
+          if (messageError) {
+            console.error(`Failed to insert AI message: ${messageError.message}`);
+          } else {
+            console.log(`Generated and stored AI first message for match ${matchData.id}`);
+
+            // Mark match as having AI message sent
+            await supabase
+              .from('matches')
+              .update({ ai_message_sent: true })
+              .eq('id', matchData.id);
+          }
+        } else {
+          console.warn(`Failed to generate AI message for match ${matchData.id}`);
+        }
       }
 
       // Send push notifications to both users
