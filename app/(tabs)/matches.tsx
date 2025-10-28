@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+// app/(tabs)/matches.tsx
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
+import { useRouter } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';
 import { supabase } from '@/services/supabase';
 import { getEligibleMatches } from '@/services/matching';
@@ -16,7 +18,6 @@ type User = {
   profile_photo_url?: string | null;
 };
 
-// ---------- DEV MOCKS (used only if DB returns no rows) ----------
 const MOCK_PROFILES: User[] = [
   {
     id: 'mock-1',
@@ -37,13 +38,15 @@ const MOCK_PROFILES: User[] = [
       'https://images.unsplash.com/photo-1531123414780-f7423da7a56a?q=80&w=1200&auto=format&fit=crop',
   },
 ];
-// ----------------------------------------------------------------
 
 export default function MatchesScreen() {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
+
+  const swiperRef = useRef<Swiper<any>>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -66,6 +69,17 @@ export default function MatchesScreen() {
     fetchProfiles();
   }, []);
 
+  function openMessageScreen(u: User) {
+    router.push({
+      pathname: '/chat/new',
+      params: {
+        userId: u.id,
+        name: u.full_name ?? 'Unknown',
+        photo: u.profile_photo_url ?? '',
+      },
+    });
+  }
+
   const handleSwipe = async (index: number, direction: 'left' | 'right') => {
     const swipedUser = profiles[index];
     if (!swipedUser) return;
@@ -74,7 +88,6 @@ export default function MatchesScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check rate limit before swipe action
       const withinLimit = await checkRateLimitByKey(user.id, 'SWIPE_ACTION');
       if (!withinLimit) {
         console.log('Rate limit exceeded for swipe actions');
@@ -82,8 +95,7 @@ export default function MatchesScreen() {
       }
 
       const action = direction === 'right' ? 'like' : 'skip';
-      
-      // Record the swipe action
+
       try {
         await (supabase.from('swipe_actions') as any).insert([
           {
@@ -92,19 +104,17 @@ export default function MatchesScreen() {
             action,
           },
         ]);
-            } catch (insertError) {
-              console.error('Error inserting swipe action:', insertError);
-            }
+      } catch (insertError) {
+        console.error('Error inserting swipe action:', insertError);
+      }
 
-            // Record successful swipe action for rate limiting
-            await recordAction(user.id, 'swipe_action', {
-              target_user_id: swipedUser.id,
-              action: action
-            });
+      await recordAction(user.id, 'swipe_action', {
+        target_user_id: swipedUser.id,
+        action,
+      });
 
-            console.log(`Swiped ${direction} on ${swipedUser.full_name}`);
+      console.log(`Swiped ${direction} on ${swipedUser.full_name}`);
 
-      // If it's a like, check for mutual match
       if (direction === 'right') {
         const { data: mutualSwipe } = await supabase
           .from('swipe_actions')
@@ -113,43 +123,41 @@ export default function MatchesScreen() {
           .eq('target_user_id', user.id)
           .eq('action', 'like')
           .single();
-        
-              if (mutualSwipe) {
-                // Check rate limit for match creation
-                const withinMatchLimit = await checkRateLimitByKey(user.id, 'CREATE_MATCH');
-                if (!withinMatchLimit) {
-                  console.log('Rate limit exceeded for match creation');
-                  return;
-                }
 
-                // Create match
-                try {
-                  const { data: matchData } = await (supabase.from('matches') as any)
-                    .insert({
-                      user1_id: user.id,
-                      user2_id: swipedUser.id,
-                      match_type: 'manual',
-                      status: 'active',
-                    })
-                    .select()
-                    .single();
+        if (mutualSwipe) {
+          const withinMatchLimit = await checkRateLimitByKey(user.id, 'CREATE_MATCH');
+          if (!withinMatchLimit) {
+            console.log('Rate limit exceeded for match creation');
+            return;
+          }
 
-                  if (matchData) {
-                    // Record successful match creation for rate limiting
-                    await recordAction(user.id, 'match_created', {
-                      match_id: matchData.id,
-                      partner_id: swipedUser.id
-                    });
+          try {
+            const { data: matchData } = await (supabase.from('matches') as any)
+              .insert({
+                user1_id: user.id,
+                user2_id: swipedUser.id,
+                match_type: 'manual',
+                status: 'active',
+              })
+              .select()
+              .single();
 
-                    // Show match modal
-                    setMatchedUser(swipedUser);
-                    setShowMatchModal(true);
-                    console.log('It\'s a match!', matchData);
-                  }
-                } catch (matchError) {
-                  console.error('Error creating match:', matchError);
-                }
-              }
+            if (matchData) {
+              await recordAction(user.id, 'match_created', {
+                match_id: matchData.id,
+                partner_id: swipedUser.id,
+              });
+
+              setMatchedUser(swipedUser);
+              setShowMatchModal(true);
+
+              // BACKEND UPGRADE: once you create/fetch conversation_id here,
+              // do: router.replace(`/chat/${conversation_id}`);
+            }
+          } catch (matchError) {
+            console.error('Error creating match:', matchError);
+          }
+        }
       }
     } catch (err) {
       console.error('Swipe error:', err);
@@ -165,15 +173,25 @@ export default function MatchesScreen() {
     );
   }
 
-  // DEV FALLBACK: show mock cards if DB returned nothing
   if (profiles.length === 0) {
     return (
       <View style={styles.container}>
         <Swiper
+          ref={swiperRef}
           cards={MOCK_PROFILES}
-          renderCard={(u: User) => <ProfileCard user={u} />}
-          onSwipedLeft={() => {}}
-          onSwipedRight={() => {}}
+          renderCard={(u: User) => (
+            <ProfileCard
+              user={u}
+              onSkip={() => swiperRef.current?.swipeLeft()}
+              onMessage={() => openMessageScreen(u)}
+            />
+          )}
+          onSwipedRight={(i) => {
+            handleSwipe(i, 'right');
+            const u = MOCK_PROFILES[i];
+            if (u) openMessageScreen(u);
+          }}
+          onSwipedLeft={(i) => handleSwipe(i, 'left')}
           backgroundColor="#fdfcfb"
           cardVerticalMargin={60}
           stackSize={2}
@@ -186,16 +204,27 @@ export default function MatchesScreen() {
   return (
     <View style={styles.container}>
       <Swiper
+        ref={swiperRef}
         cards={profiles}
-        renderCard={(user: User) => <ProfileCard user={user} />}
+        renderCard={(user: User) => (
+          <ProfileCard
+            user={user}
+            onSkip={() => swiperRef.current?.swipeLeft()}
+            onMessage={() => openMessageScreen(user)}
+          />
+        )}
+        onSwipedRight={(i) => {
+          handleSwipe(i, 'right');
+          const u = profiles[i];
+          if (u) openMessageScreen(u);
+        }}
         onSwipedLeft={(i) => handleSwipe(i, 'left')}
-        onSwipedRight={(i) => handleSwipe(i, 'right')}
         backgroundColor="#fdfcfb"
         cardVerticalMargin={60}
         stackSize={2}
         animateCardOpacity
       />
-      
+
       <MatchModal
         user={matchedUser}
         visible={showMatchModal}
@@ -216,8 +245,8 @@ function MatchModal({ user, visible, onClose }: { user: User | null; visible: bo
       <View style={styles.modalOverlay}>
         <View style={styles.matchModal}>
           <Text style={styles.matchTitle}>It's a Match! 🎉</Text>
-          <Image 
-            source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/200x200.png?text=Peerly' }} 
+          <Image
+            source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/200x200.png?text=Peerly' }}
             style={styles.matchImage}
           />
           <Text style={styles.matchName}>{user.full_name}</Text>
@@ -231,7 +260,15 @@ function MatchModal({ user, visible, onClose }: { user: User | null; visible: bo
   );
 }
 
-function ProfileCard({ user }: { user: User }) {
+function ProfileCard({
+  user,
+  onSkip,
+  onMessage,
+}: {
+  user: User;
+  onSkip?: () => void;
+  onMessage?: () => void;
+}) {
   return (
     <View style={styles.card}>
       <Image
@@ -254,10 +291,10 @@ function ProfileCard({ user }: { user: User }) {
         </View>
 
         <View style={styles.actions}>
-          <TouchableOpacity style={[styles.btn, styles.skip]}>
+          <TouchableOpacity style={[styles.btn, styles.skip]} onPress={onSkip}>
             <Text style={styles.btnText}>Skip</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, styles.message]}>
+          <TouchableOpacity style={[styles.btn, styles.message]} onPress={onMessage}>
             <Text style={[styles.btnText, { color: 'white' }]}>Message</Text>
           </TouchableOpacity>
         </View>
