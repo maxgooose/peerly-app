@@ -9,12 +9,24 @@ export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [destination, setDestination] = useState<string | null>(null);
 
+  // DEV MODE: Set to true to bypass authentication for testing
+  const DEV_MODE = true;
+
   useEffect(() => {
     initializeApp();
   }, []);
 
   const initializeApp = async () => {
     try {
+      // DEV MODE: Bypass auth for development
+      if (DEV_MODE) {
+        console.log('DEV MODE: Bypassing authentication');
+        // Simulate authenticated user and go straight to matches
+        setDestination('/(tabs)/matches');
+        setIsReady(true);
+        return;
+      }
+
       // 1. Check if user is authenticated
       const user = await getCurrentUser();
 
