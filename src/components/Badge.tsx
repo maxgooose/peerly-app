@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import type { UserBadge } from '@/src/services/badges';
+import type { UserBadge } from '@/services/badges';
 
 interface BadgeProps {
   badge: UserBadge;

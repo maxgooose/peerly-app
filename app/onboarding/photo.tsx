@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { completeOnboarding } from '@/src/services/onboarding';
-import { uploadProfilePhoto, updateUserProfilePhotoUrl } from '@/src/services/storage';
-import { supabase } from '@/src/services/supabase';
-import type { WeeklyAvailability } from '@/src/services/supabase';
+import { completeOnboarding } from '@/services/onboarding';
+import { uploadProfilePhoto, updateUserProfilePhotoUrl } from '@/services/storage';
+import { supabase } from '@/services/supabase';
+import type { WeeklyAvailability } from '@/services/supabase';
 
 export default function PhotoScreen() {
   const router = useRouter();
