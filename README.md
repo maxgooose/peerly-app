@@ -1,4 +1,6 @@
 # Peerly
+BUILT BY 
+HAMZA ZACK RODNEY SAFWAN
 
 A mobile app that connects university students for study partnerships through intelligent matching and real-time chat.
 
