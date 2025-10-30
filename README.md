@@ -1,11 +1,8 @@
-<<<<<<< HEAD
+
 # Peerly - Student Study Matching App 🎓
 =======
-# Peerly
-BUILT BY 
-HAMZA ZACK RODNEY SAFWAN
->>>>>>> 036ed4e539e4f5e0bcdf559fc553b7f557c1b233
-
+Developed by: Hamza Harb, Zachary Arrastia, Safwan Chowdhury & Rodney Scott
+=======
 A mobile application that intelligently matches university students for study partnerships using AI-powered compatibility scoring, real-time chat, and study group management.
 
 ## 🌟 Features
@@ -201,5 +198,3 @@ For support, check the documentation in the `docs/` folder or create an issue in
 ---
 
 Built with ❤️ for university students
-
-Developed by: Hamza Harb, Zachary Arrastia, Safwan Chowdhury & Rodney Scott
