@@ -1,6 +1,6 @@
 
 # Peerly - Student Study Matching App 🎓
-=======
+
 Developed by: Hamza Harb, Zachary Arrastia, Safwan Chowdhury & Rodney Scott
 =======
 A mobile application that intelligently matches university students for study partnerships using AI-powered compatibility scoring, real-time chat, and study group management.
