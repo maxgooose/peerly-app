@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 # Peerly - Student Study Matching App 🎓
+=======
+# Peerly
+BUILT BY 
+HAMZA ZACK RODNEY SAFWAN
+>>>>>>> 036ed4e539e4f5e0bcdf559fc553b7f557c1b233
 
 A mobile application that intelligently matches university students for study partnerships using AI-powered compatibility scoring, real-time chat, and study group management.
 
