@@ -1,3 +1,5 @@
+/// <reference path="../types/external.d.ts" />
+
 /**
  * Supabase Edge Function: generate-first-message
  * 

@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "types": [
+      "./types/external.d.ts"
+    ],
+    "lib": [
+      "deno.ns",
+      "deno.window",
+      "dom",
+      "esnext"
+    ]
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "useTabs": false
+  },
+  "tasks": {
+    "serve": "supabase functions serve --env-file ../.env.local",
+    "deploy:generate-first-message": "supabase functions deploy generate-first-message"
+  }
+}
+
+
