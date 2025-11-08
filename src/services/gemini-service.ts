@@ -17,8 +17,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // ==============================================================================
 
 // Initialize Gemini API client 
-// Using your API key for development (in production, use environment variable)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDtpWTV2dpW-9Ka1aRX7t_3lcFNYjGsiRY');
+// IMPORTANT: Set GEMINI_API_KEY in your .env file (never commit API keys!)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Configure Gemini 2.0 Flash model for faster, cost-effective responses
 // Alternative models: 'gemini-2.5-flash', 'gemini-2.0-flash-lite' for even faster

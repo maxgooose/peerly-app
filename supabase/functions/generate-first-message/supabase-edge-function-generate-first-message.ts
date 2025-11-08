@@ -47,8 +47,8 @@ interface UserProfile {
  * Environment variables - set these in Supabase dashboard or CLI
  * Command to set: supabase secrets set GEMINI_API_KEY=your_key_here
  */
-// Using your Gemini API key from Google AI Studio
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyDtpWTV2dpW-9Ka1aRX7t_3lcFNYjGsiRY';
+// Gemini API key - must be set in Supabase Edge Function environment variables
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
 
 /**
  * Gemini API endpoint - using Flash model for speed and cost efficiency

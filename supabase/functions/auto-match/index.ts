@@ -331,8 +331,7 @@ Deno.serve(async (req) => {
         // Attempt to generate and send an AI first message (fallback if no Gemini key)
         try {
           if (!matchData.ai_message_sent) {
-            // Using your Gemini API key from Google AI Studio
-            const geminiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyDtpWTV2dpW-9Ka1aRX7t_3lcFNYjGsiRY';
+            const geminiKey = Deno.env.get('GEMINI_API_KEY') || '';
 
             // Fetch user profiles for prompt context
             const { data: senderProfile, error: senderProfileError } = await supabase
