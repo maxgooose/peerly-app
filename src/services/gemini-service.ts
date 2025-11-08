@@ -17,12 +17,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // ==============================================================================
 
 // Initialize Gemini API client 
-// IMPORTANT: Set GEMINI_API_KEY in your .env file (never commit API keys!)
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Configure Gemini 2.0 Flash model for faster, cost-effective responses
-// Alternative models: 'gemini-2.5-flash', 'gemini-2.0-flash-lite' for even faster
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// Configure Gemini 1.5 Flash model for faster, cost-effective responses
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // ==============================================================================
 // TYPE DEFINITIONS
@@ -136,37 +135,50 @@ function constructPrompt(
     complementaryAspects: string[];
   }
 ): string {
-  return `Generate a brief first text message for a study buddy app.
+  return `You are helping a college student named ${sender.name} write a friendly first message to a potential study buddy named ${recipient.name}.
 
-**USER 1 (SENDER):**
+SENDER PROFILE:
 - Name: ${sender.name}
 - Major: ${sender.major}
+- Year: ${sender.year}
 - Courses: ${sender.courses.join(', ')}
+- Interests: ${sender.interests.join(', ')}
+- Study Preferences: ${sender.studyPreferences.location}, ${sender.studyPreferences.timeOfDay}, ${sender.studyPreferences.groupSize}
+${sender.bio ? `- Bio: ${sender.bio}` : ''}
+${sender.goals ? `- Goals: ${sender.goals.join(', ')}` : ''}
 
-**USER 2 (RECIPIENT):**
+RECIPIENT PROFILE:
 - Name: ${recipient.name}
 - Major: ${recipient.major}
+- Year: ${recipient.year}
 - Courses: ${recipient.courses.join(', ')}
+- Interests: ${recipient.interests.join(', ')}
+- Study Preferences: ${recipient.studyPreferences.location}, ${recipient.studyPreferences.timeOfDay}, ${recipient.studyPreferences.groupSize}
+${recipient.bio ? `- Bio: ${recipient.bio}` : ''}
+${recipient.goals ? `- Goals: ${recipient.goals.join(', ')}` : ''}
 
-**SHARED COURSES:** ${matchingPoints.commonCourses.length > 0 ? matchingPoints.commonCourses.join(', ') : 'None'}
+WHAT THEY HAVE IN COMMON:
+${matchingPoints.commonCourses.length > 0 ? `- Common Courses: ${matchingPoints.commonCourses.join(', ')}` : ''}
+${matchingPoints.commonInterests.length > 0 ? `- Common Interests: ${matchingPoints.commonInterests.join(', ')}` : ''}
+${matchingPoints.complementaryAspects.length > 0 ? `- Complementary Aspects: ${matchingPoints.complementaryAspects.join('; ')}` : ''}
 
-**TASK:**
-Create a brief first message FROM ${sender.name} (User 1) TO ${recipient.name} (User 2).
+INSTRUCTIONS:
+Write a warm, friendly first message from ${sender.name} to ${recipient.name} that:
 
-**REQUIREMENTS:**
-1. Maximum 10 words total
-2. Reference a shared course if available
-3. Casual, friendly tone (like texting)
-4. NO greetings like "Hey" or "Hi"
-5. NO sender's name
-6. Brief, first-text style
+1. Naturally mentions 2-3 specific things they have in common
+2. Sounds authentic and conversational (not robotic)
+3. Shows genuine interest in connecting as study partners
+4. Suggests a specific way to collaborate (study session, sharing notes, etc.)
+5. Is 3-5 sentences long
+6. Ends with a clear, friendly question or call to action
+7. Uses casual college student language
 
-**EXAMPLES:**
-- "Study Algorithms together?"
-- "Data Structures study partner?"
-- "Want to prep for the exam?"
-
-Generate ONLY the message (under 10 words):`;
+IMPORTANT: 
+- Write ONLY the message text
+- Do NOT include greetings like "Subject:" or "Message:" headers
+- Make it sound like a real message between college students
+- Be specific about courses or interests they share
+- Keep it warm but professional`;
 }
 
 // ==============================================================================
