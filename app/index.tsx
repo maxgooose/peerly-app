@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
-import { getCurrentUser } from '@/services/auth';
+import { getCurrentUser, signOut } from '@/services/auth';
 import { getOnboardingStatus, ensureUserRecordExists } from '@/services/onboarding';
+import { getUserProfile } from '@/services/profile';
 import { colors } from '@/constants/design';
 
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [destination, setDestination] = useState<string | null>(null);
-
-  // DEV MODE: Set to true to bypass authentication for testing
-  const DEV_MODE = true;
 
   useEffect(() => {
     initializeApp();
@@ -18,15 +16,6 @@ export default function Index() {
 
   const initializeApp = async () => {
     try {
-      // DEV MODE: Bypass auth for development
-      if (DEV_MODE) {
-        console.log('DEV MODE: Bypassing authentication');
-        // Simulate authenticated user and go straight to matches
-        setDestination('/(tabs)/matches');
-        setIsReady(true);
-        return;
-      }
-
       // 1. Check if user is authenticated
       const user = await getCurrentUser();
 
@@ -46,7 +35,24 @@ export default function Index() {
         return;
       }
 
-      // 3. Check onboarding status
+      // 3. Ensure account is active
+      const profileResult = await getUserProfile(user.id);
+
+      if (!profileResult.success || !profileResult.data) {
+        console.error('Failed to load user profile for status check:', profileResult.error);
+        await signOut();
+        setDestination('/(auth)/login');
+        return;
+      }
+
+      if (profileResult.data.is_active === false) {
+        console.warn('Inactive account detected. Redirecting to login.');
+        await signOut();
+        setDestination('/(auth)/login');
+        return;
+      }
+
+      // 4. Check onboarding status
       const onboardingStatus = await getOnboardingStatus();
 
       if (!onboardingStatus.success) {
@@ -56,7 +62,7 @@ export default function Index() {
         return;
       }
 
-      // 4. Route based on onboarding completion
+      // 5. Route based on onboarding completion
       if (onboardingStatus.onboardingCompleted) {
         // User is fully set up → go to main app
         setDestination('/(tabs)/matches');

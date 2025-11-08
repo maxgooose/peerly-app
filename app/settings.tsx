@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/services/supabase';
+import { deactivateAccount } from '@/services/profile';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -49,27 +50,45 @@ export default function SettingsScreen() {
     );
   }
 
-  function handleDeleteAccount() {
+  function handleDeactivateAccount() {
     Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your data will be permanently deleted.',
+      'Deactivate Account',
+      'Deactivating your account will hide your profile and sign you out. Your data will be preserved and can be restored later.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Deactivate',
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Confirm Deletion',
-              'Are you absolutely sure? This will delete all your matches, messages, and profile data.',
+              'Confirm Deactivation',
+              'Are you sure you want to deactivate your account? You can contact support to reactivate it later.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                  text: 'Delete Forever',
+                  text: 'Deactivate Account',
                   style: 'destructive',
-                  onPress: () => {
-                    // TODO: Implement account deletion
-                    Alert.alert('Coming Soon', 'Account deletion will be available in a future update.');
+                  onPress: async () => {
+                    try {
+                      const { data: userData } = await supabase.auth.getUser();
+                      const userId = userData?.user?.id;
+                      if (!userId) {
+                        Alert.alert('Error', 'You must be signed in.');
+                        return;
+                      }
+                      const result = await deactivateAccount(userId);
+                      if (!result.success) {
+                        Alert.alert('Error', result.error || 'Failed to deactivate account.');
+                        return;
+                      }
+                      await supabase.auth.signOut();
+                      Alert.alert('Account Deactivated', 'Your account has been deactivated. Contact support if you want to restore it.', [
+                        { text: 'OK', onPress: () => router.replace('/(auth)/login') },
+                      ]);
+                    } catch (e) {
+                      console.error('Deactivate account error:', e);
+                      Alert.alert('Error', 'Failed to deactivate account. Please try again.');
+                    }
                   },
                 },
               ]
@@ -78,6 +97,14 @@ export default function SettingsScreen() {
         },
       ]
     );
+  }
+
+  function handleEditProfile() {
+    router.push('/settings/edit-profile');
+  }
+
+  function handleChangePassword() {
+    router.push('/settings/change-password');
   }
 
   function handleContactSupport() {
@@ -218,7 +245,7 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} onPress={handleEditProfile}>
           <View style={styles.settingContent}>
             <Ionicons name="person-outline" size={24} color="#007AFF" />
             <View style={styles.settingText}>
@@ -229,7 +256,7 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} onPress={handleChangePassword}>
           <View style={styles.settingContent}>
             <Ionicons name="lock-closed-outline" size={24} color="#007AFF" />
             <View style={styles.settingText}>
@@ -346,12 +373,12 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color="#FF3B30" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.dangerItem} onPress={handleDeleteAccount}>
+        <TouchableOpacity style={styles.dangerItem} onPress={handleDeactivateAccount}>
           <View style={styles.settingContent}>
             <Ionicons name="trash-outline" size={24} color="#FF3B30" />
             <View style={styles.settingText}>
-              <Text style={styles.dangerLabel}>Delete Account</Text>
-              <Text style={styles.settingDescription}>Permanently delete your account</Text>
+              <Text style={styles.dangerLabel}>Deactivate Account</Text>
+              <Text style={styles.settingDescription}>Hide profile and sign out (data preserved)</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#FF3B30" />

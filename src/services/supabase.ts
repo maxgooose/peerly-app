@@ -67,6 +67,7 @@ export type Database = {
           total_matches: number; // Total number of matches
           successful_matches: number; // Number of successful matches
           avg_messages_per_match: number; // Average messages per match
+          is_active: boolean; // Account active status (false = soft deleted)
           created_at: string; // Timestamp of account creation
         };
         // Insert type represents data structure for INSERT operations
@@ -95,6 +96,7 @@ export type Database = {
           total_matches?: number;
           successful_matches?: number;
           avg_messages_per_match?: number;
+          is_active?: boolean; // Optional: Defaults to true
           created_at?: string; // Optional: Auto-set to now() if not provided
         };
         // Update type represents data structure for UPDATE operations
@@ -123,6 +125,7 @@ export type Database = {
           total_matches?: number;
           successful_matches?: number;
           avg_messages_per_match?: number;
+          is_active?: boolean;
           created_at?: string;
         };
       };
