@@ -5,7 +5,7 @@ Developed by: Hamza Harb, Zachary Arrastia, Safwan Chowdhury & Rodney Scott
 =======
 A mobile application that intelligently matches university students for study partnerships using AI-powered compatibility scoring, real-time chat, and study group management.
 
-## 🌟 Features
+##  Features
 
 - **Smart Student Matching**
   - AI-powered compatibility scoring
@@ -30,7 +30,7 @@ A mobile application that intelligently matches university students for study pa
   - Schedule availability
   - Progress tracking
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -75,7 +75,7 @@ cd supabase
 # Run the test data scripts from sql/test-data/
 ```
 
-## 🏗 Project Structure
+##  Project Structure
 
 ```
 peerly-app/
@@ -97,7 +97,7 @@ peerly-app/
 └── docs/               # Documentation
 ```
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Frontend**
   - React Native with Expo
@@ -115,7 +115,7 @@ peerly-app/
   - Google Gemini API
   - Custom matching algorithm
 
-## 📱 Core Features Details
+##  Core Features Details
 
 ### Auto-Matching System
 - Compatibility scoring (100 points max)
@@ -139,7 +139,7 @@ peerly-app/
 - Member roles and permissions
 - Group chat functionality
 
-## 🔒 Security
+##  Security
 
 - Row Level Security (RLS)
 - Email verification
@@ -148,14 +148,8 @@ peerly-app/
 - Input sanitization
 - File upload security
 
-## 📈 Current Status
 
-- **Phase:** 5/14 Complete
-- **Progress:** 36%
-- **MVP Readiness:** Core features implemented
-- **Next Steps:** Image sharing, security hardening, and testing
-
-## 🧪 Testing
+##  Testing
 
 1. Run the test suite:
 ```bash
@@ -170,7 +164,7 @@ cd sql/test-data
 
 Refer to `docs/testing/TESTING_GUIDE.md` for detailed testing procedures.
 
-## 📚 Documentation
+##  Documentation
 
 - [Project Status](docs/PROJECT_STATUS.md)
 - [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md)
@@ -179,7 +173,7 @@ Refer to `docs/testing/TESTING_GUIDE.md` for detailed testing procedures.
 - [Badge System](docs/BADGE_SYSTEM.md)
 - [Quick Start Guide](docs/TEAM_QUICK_START.md)
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create your feature branch
@@ -187,14 +181,8 @@ Refer to `docs/testing/TESTING_GUIDE.md` for detailed testing procedures.
 4. Push to the branch
 5. Create a Pull Request
 
-## 📄 License
+##  License
 
 Private project - All rights reserved
-
-## 🙋‍♂️ Support
-
-For support, check the documentation in the `docs/` folder or create an issue in the repository.
-
----
 
 Built with ❤️ for university students
