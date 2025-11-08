@@ -8,6 +8,7 @@ import { supabase } from './supabase';
 import type { ConversationWithMatch, MessageWithSender, Message } from '@/types/chat';
 import { checkRateLimitByKey, recordAction } from './rateLimiting';
 import { sanitizeMessage } from '@/utils/sanitization';
+import { isOnline, queueOfflineMessage } from './offline';
 
 /**
  * Get all conversations for the current user
@@ -357,6 +358,22 @@ export async function sendMessage(params: {
     client_id: clientId,
   };
 
+  // Check if device is online
+  if (!isOnline()) {
+    // Queue message for offline sending
+    await queueOfflineMessage({
+      id: clientId,
+      conversation_id: params.conversationId,
+      content: sanitizedContent,
+      timestamp: Date.now(),
+    });
+
+    console.log('Offline: Message queued for later sync');
+
+    // Return optimistic message with 'sending' status
+    return optimisticMessage;
+  }
+
   try {
     // Insert into database
     const { data, error } = await (supabase.from('messages') as any)
@@ -385,6 +402,15 @@ export async function sendMessage(params: {
     return data as Message;
   } catch (error) {
     console.error('sendMessage error:', error);
+    
+    // Queue message for retry
+    await queueOfflineMessage({
+      id: clientId,
+      conversation_id: params.conversationId,
+      content: sanitizedContent,
+      timestamp: Date.now(),
+    });
+
     // Return optimistic message with failed status
     return {
       ...optimisticMessage,

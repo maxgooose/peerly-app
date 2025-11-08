@@ -14,6 +14,7 @@ import {
   Text,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/services/supabase';
@@ -21,6 +22,7 @@ import { getMessages, getConversation, getOtherUser, sendMessage, sendImageMessa
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import type { MessageWithSender, ConversationWithMatch, Message } from '@/types/chat';
+import { getOfflineMessages, syncOfflineData, onNetworkStateChange } from '@/src/services/offline';
 
 export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,6 +37,10 @@ export default function ChatDetailScreen() {
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [oldestMessageTimestamp, setOldestMessageTimestamp] = useState<string | null>(null);
 
+  // Offline support state
+  const [pendingMessagesCount, setPendingMessagesCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   useEffect(() => {
     if (id && typeof id === 'string') {
       loadCurrentUser();
@@ -47,7 +53,7 @@ export default function ChatDetailScreen() {
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
 
-    console.log('📡 Setting up real-time subscription for conversation:', id);
+    console.log('Setting up real-time subscription for conversation:', id);
 
     // Create Realtime channel
     const channel = supabase
@@ -61,7 +67,7 @@ export default function ChatDetailScreen() {
           filter: `conversation_id=eq.${id}`,
         },
         (payload: any) => {
-          console.log('📨 New message received:', payload);
+          console.log('New message received:', payload);
           handleRealtimeMessage(payload.new as Message);
         }
       )
@@ -74,20 +80,80 @@ export default function ChatDetailScreen() {
           filter: `conversation_id=eq.${id}`,
         },
         (payload: any) => {
-          console.log('🔄 Message updated:', payload);
+          console.log('Message updated:', payload);
           handleRealtimeMessageUpdate(payload.new as Message);
         }
       )
       .subscribe((status: any) => {
-        console.log('📡 Realtime subscription status:', status);
+        console.log('Realtime subscription status:', status);
       });
 
     // Cleanup on unmount
     return () => {
-      console.log('🔌 Cleaning up real-time subscription');
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [id]);
+
+  // Monitor offline message queue
+  useEffect(() => {
+    if (!id || typeof id !== 'string') {
+      setPendingMessagesCount(0);
+      return;
+    }
+
+    // Update pending count initially
+    updatePendingCount();
+
+    // Check every 5 seconds
+    const interval = setInterval(updatePendingCount, 5000);
+
+    // Listen for network state changes
+    const unsubscribe = onNetworkStateChange((state) => {
+      if (state.isConnected && state.isInternetReachable) {
+        // When back online, refresh pending count
+        updatePendingCount();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [id]);
+
+  async function updatePendingCount() {
+    if (!id || typeof id !== 'string') {
+      setPendingMessagesCount(0);
+      return;
+    }
+
+    try {
+      const messages = await getOfflineMessages();
+      const count = messages.filter(
+        (item) => item.conversation_id === id && item.status !== 'synced'
+      ).length;
+      setPendingMessagesCount(count);
+    } catch (error) {
+      console.error('Error checking offline messages:', error);
+    }
+  }
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    try {
+      // Trigger manual sync
+      await syncOfflineData();
+      // Reload messages
+      await loadMessages();
+      // Update pending count
+      await updatePendingCount();
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   async function loadCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -131,18 +197,29 @@ export default function ChatDetailScreen() {
     // Don't add if it's our own optimistic message (already in state)
     setMessages((prev) => {
       // Check if message already exists by ID or client_id
-      const exists = prev.some(
+      const existingIndex = prev.findIndex(
         (m) =>
           m.id === message.id ||
           (message.client_id && m.client_id === message.client_id)
       );
 
-      if (exists) {
-        console.log('⏭️  Message already exists, skipping');
-        return prev;
-      }
+      if (existingIndex !== -1) {
+        const existingMessage = prev[existingIndex];
+        const mergedMessage: MessageWithSender = {
+          ...existingMessage,
+          ...message,
+          sender: existingMessage.sender,
+          status: message.status || existingMessage.status,
+          client_id: message.client_id || existingMessage.client_id,
+        };
 
-      console.log('✅ Adding new real-time message to state');
+        const updated = [...prev];
+        updated[existingIndex] = mergedMessage;
+
+        updatePendingCount();
+
+        return updated;
+      }
 
       // Create MessageWithSender object
       const newMessage: MessageWithSender = {
@@ -163,6 +240,9 @@ export default function ChatDetailScreen() {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
       }
+
+      // Update pending count in case this cleared a queued message
+      updatePendingCount();
 
       return updated;
     });
@@ -390,6 +470,11 @@ export default function ChatDetailScreen() {
     ? getOtherUser(conversation, currentUserId).full_name || 'Chat'
     : 'Chat';
 
+  // Add pending messages indicator to title
+  const fullHeaderTitle = pendingMessagesCount > 0
+    ? `${headerTitle} • ${pendingMessagesCount} pending`
+    : headerTitle;
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -400,10 +485,10 @@ export default function ChatDetailScreen() {
 
   return (
     <>
-      {/* Custom header with user name */}
+      {/* Custom header with user name and pending count */}
       <Stack.Screen
         options={{
-          title: headerTitle,
+          title: fullHeaderTitle,
           headerBackTitle: 'Chats',
         }}
       />
@@ -435,6 +520,15 @@ export default function ChatDetailScreen() {
                 <Text style={styles.paginationLoadingText}>Loading older messages...</Text>
               </View>
             ) : null
+          }
+          // Pull-to-refresh for manual sync
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor="#007AFF"
+              title={pendingMessagesCount > 0 ? "Syncing messages..." : "Pull to refresh"}
+            />
           }
         />
 

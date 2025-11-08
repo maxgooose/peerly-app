@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { initializePushNotifications, addNotificationResponseListener } from '@/services/notifications';
+import { initializeNetworkMonitoring, onNetworkStateChange } from '@/src/services/offline';
+import { OfflineIndicator } from '@/src/components/OfflineIndicator';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -12,6 +14,18 @@ export default function RootLayout() {
   useEffect(() => {
     // Initialize push notifications when app loads
     initializePushNotifications();
+
+    // Initialize network monitoring for offline support
+    const unsubscribeNetwork = initializeNetworkMonitoring();
+
+    // Listen for network state changes
+    const unsubscribeNetworkListener = onNetworkStateChange((state) => {
+      if (state.isConnected && state.isInternetReachable) {
+        console.log('Online - Auto-syncing queued items...');
+      } else {
+        console.log('Offline - Queueing enabled');
+      }
+    });
 
     // Listen for notification taps
     responseListener.current = addNotificationResponseListener((response) => {
@@ -29,6 +43,9 @@ export default function RootLayout() {
 
     // Cleanup listeners on unmount
     return () => {
+      unsubscribeNetwork();
+      unsubscribeNetworkListener();
+      
       if (notificationListener.current) {
         notificationListener.current.remove();
       }
@@ -41,6 +58,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="auto" />
+      <OfflineIndicator />
       <Stack>
         <Stack.Screen 
           name="(auth)" 

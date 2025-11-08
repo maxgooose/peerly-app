@@ -4,6 +4,7 @@ import Swiper from 'react-native-deck-swiper';
 import { supabase } from '@/services/supabase';
 import { getEligibleMatches } from '@/services/matching';
 import { checkRateLimitByKey, recordAction } from '@/services/rateLimiting';
+import { isOnline, queueOfflineAction } from '@/src/services/offline';
 
 const { width } = Dimensions.get('window');
 
@@ -83,6 +84,24 @@ export default function MatchesScreen() {
 
       const action = direction === 'right' ? 'like' : 'skip';
       
+      // Check if device is online
+      if (!isOnline()) {
+        // Queue swipe action for offline sync
+        await queueOfflineAction({
+          type: 'swipe',
+          payload: {
+            user_id: user.id,
+            target_user_id: swipedUser.id,
+            action,
+          },
+        });
+        
+        console.log(`Offline: Swipe queued for later sync - ${action} on ${swipedUser.full_name}`);
+        
+        // Continue with UI update (card removal happens via swiper)
+        return;
+      }
+
       // Record the swipe action
       try {
         await (supabase.from('swipe_actions') as any).insert([
