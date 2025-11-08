@@ -202,6 +202,30 @@ ORDER BY start_time DESC
 LIMIT 10;
 ```
 
+### AI First Message Verification
+
+```sql
+-- Most recent AI messages inserted into chat
+SELECT m.id, m.conversation_id, m.sender_id, m.created_at
+FROM messages m
+WHERE m.is_ai_generated = true
+ORDER BY m.created_at DESC
+LIMIT 10;
+
+-- Suggestions created by the scheduled flow
+SELECT id, sender_id, recipient_id, created_at
+FROM suggested_messages
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Matches that have had the AI icebreaker sent
+SELECT id, user1_id, user2_id, matched_at
+FROM matches
+WHERE ai_message_sent = true
+ORDER BY matched_at DESC
+LIMIT 10;
+```
+
 ### View Match Analytics
 
 ```sql

@@ -31,6 +31,9 @@ export async function getConversations(): Promise<ConversationWithMatch[]> {
           user1_id,
           user2_id,
           status,
+          match_type,
+          matched_at,
+          ai_message_sent,
           user1:users!matches_user1_id_fkey (
             id,
             full_name,
@@ -71,6 +74,9 @@ export async function getConversation(conversationId: string): Promise<Conversat
           user1_id,
           user2_id,
           status,
+          match_type,
+          matched_at,
+          ai_message_sent,
           user1:users!matches_user1_id_fkey (
             id,
             full_name,

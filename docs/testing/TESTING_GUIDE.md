@@ -157,6 +157,36 @@ Choose one:
 
 ---
 
+### PART 2.5: Auto-match AI message (dev cycle)
+
+Use this to verify the scheduled flow is inserting AI first messages without a Gemini key (fallback text):
+
+1. Ensure you have at least two eligible users (onboarding_complete = true); last cycle > 24h or null
+2. Invoke the function manually (replace values with your project):
+
+```bash
+curl -X POST 'https://your-project.supabase.co/functions/v1/auto-match' \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "Content-Type: application/json"
+```
+
+3. Verify inserts:
+
+```sql
+-- AI messages
+SELECT * FROM messages WHERE is_ai_generated = true ORDER BY created_at DESC LIMIT 5;
+
+-- Suggestions
+SELECT * FROM suggested_messages ORDER BY created_at DESC LIMIT 5;
+
+-- Matches flagged
+SELECT * FROM matches WHERE ai_message_sent = true ORDER BY matched_at DESC LIMIT 5;
+```
+
+If empty, check Edge logs in Supabase Dashboard → Functions → auto-match → Logs.
+
+---
+
 ### PART 3: Verification Checklist
 
 Go through this checklist. All should be ✅:

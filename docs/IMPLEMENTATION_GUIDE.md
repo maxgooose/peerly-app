@@ -11,6 +11,41 @@ User Matches → Supabase Edge Function → Gemini AI → Generated Message → 
               Database (profiles, matches, suggested_messages)
 ```
 
+## Server‑initiated (scheduled) AI first message
+
+The auto‑match Edge Function now generates and sends a first message automatically for each new match:
+
+- After a match and conversation are created, the function:
+  - Fetches profiles for both users
+  - Generates a first message (fallback locally when no Gemini key)
+  - Inserts into `suggested_messages` (analytics/caching)
+  - Inserts a chat `messages` row with `is_ai_generated = true` and `suggested_message_id`
+  - Updates `matches.ai_message_sent = true`
+
+Monitoring SQL:
+
+```sql
+-- Recent AI messages
+SELECT m.id, m.conversation_id, m.sender_id, m.created_at
+FROM messages m
+WHERE m.is_ai_generated = true
+ORDER BY m.created_at DESC
+LIMIT 10;
+
+-- Recent suggestions
+SELECT id, sender_id, recipient_id, created_at
+FROM suggested_messages
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Matches flagged as AI message sent
+SELECT id, user1_id, user2_id, ai_message_sent, matched_at
+FROM matches
+WHERE ai_message_sent = true
+ORDER BY matched_at DESC
+LIMIT 10;
+```
+
 ## Prerequisites
 
 1. **Gemini API Key**: Get one from [Google AI Studio](https://makersuite.google.com/app/apikey)

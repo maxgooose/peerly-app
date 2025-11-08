@@ -12,7 +12,6 @@
  * 5. Store message in database for analytics
  * 6. Return message to mobile app for display
  * 
- * Deploy to: supabase/functions/generate-first-message/index.ts
  * Deploy command: supabase functions deploy generate-first-message
  */
 
@@ -114,13 +113,13 @@ serve(async (req) => {
     // ============================================================================
     /**
      * Fetch sender's profile
-     * - .select('*') gets all columns from profiles table
+     * - .select('*') gets all columns from users table
      * - .eq() filters by ID (equivalent to WHERE id = senderId)
      * - .single() expects exactly one row, throws error if 0 or multiple
      * - RLS policies ensure user can only see permitted profiles
      */
     const { data: senderData, error: senderError } = await supabaseClient
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', senderId)
       .single();
@@ -130,7 +129,7 @@ serve(async (req) => {
      * Using same pattern as sender fetch above
      */
     const { data: recipientData, error: recipientError } = await supabaseClient
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', recipientId)
       .single();
@@ -153,26 +152,34 @@ serve(async (req) => {
      */
     const sender: UserProfile = {
       id: senderData.id,
-      name: senderData.name,
-      major: senderData.major,
-      year: senderData.year,
-      courses: senderData.courses || [],            // Default to empty array if null
-      interests: senderData.interests || [],        // Default to empty array if null
-      study_preferences: senderData.study_preferences || {},  // Default to empty object
+      name: senderData.full_name || 'Student',
+      major: senderData.major || 'Undeclared',
+      year: parseInt(senderData.year || '1'),
+      courses: senderData.preferred_subjects || [],
+      interests: senderData.preferred_subjects || [],  // Use subjects as interests
+      study_preferences: {
+        location: 'library',  // Default values since not in DB
+        time_of_day: 'afternoon',
+        group_size: senderData.study_style || 'one-on-one',
+      },
       bio: senderData.bio,
-      goals: senderData.goals || [],                // Default to empty array if null
+      goals: senderData.study_goals ? [senderData.study_goals] : [],
     };
 
     const recipient: UserProfile = {
       id: recipientData.id,
-      name: recipientData.name,
-      major: recipientData.major,
-      year: recipientData.year,
-      courses: recipientData.courses || [],
-      interests: recipientData.interests || [],
-      study_preferences: recipientData.study_preferences || {},
+      name: recipientData.full_name || 'Student',
+      major: recipientData.major || 'Undeclared',
+      year: parseInt(recipientData.year || '1'),
+      courses: recipientData.preferred_subjects || [],
+      interests: recipientData.preferred_subjects || [],  // Use subjects as interests
+      study_preferences: {
+        location: 'library',  // Default values since not in DB
+        time_of_day: 'afternoon',
+        group_size: recipientData.study_style || 'one-on-one',
+      },
       bio: recipientData.bio,
-      goals: recipientData.goals || [],
+      goals: recipientData.study_goals ? [recipientData.study_goals] : [],
     };
 
     // ============================================================================
@@ -424,3 +431,4 @@ function getYearLabel(year: number): string {
   // Return specific label for 1-4, otherwise assume graduate student
   return labels[year] || 'Graduate Student';
 }
+

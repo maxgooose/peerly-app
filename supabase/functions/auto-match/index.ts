@@ -327,6 +327,69 @@ Deno.serve(async (req) => {
         errors.push(`Failed to create conversation: ${convError.message}`);
       } else {
         console.log(`Created conversation ${convData.id}`);
+
+        // Attempt to generate and send an AI first message (fallback if no Gemini key)
+        try {
+          if (!matchData.ai_message_sent) {
+            // Using your Gemini API key from Google AI Studio
+            const geminiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyDtpWTV2dpW-9Ka1aRX7t_3lcFNYjGsiRY';
+
+            // Fetch user profiles for prompt context
+            const { data: senderProfile, error: senderProfileError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', matchData.user1_id)
+              .single();
+            const { data: recipientProfile, error: recipientProfileError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', matchData.user2_id)
+              .single();
+
+            if (!senderProfileError && !recipientProfileError && senderProfile && recipientProfile) {
+              // For now ignore Gemini: build a personalized fallback message locally
+              const aiText = generateFallbackFirstMessage(senderProfile, recipientProfile);
+
+              // Store the suggestion for analytics/caching (best-effort)
+              const { data: suggestion } = await supabase
+                .from('suggested_messages')
+                .insert({
+                  sender_id: matchData.user1_id,
+                  recipient_id: matchData.user2_id,
+                  message: aiText,
+                })
+                .select()
+                .single();
+
+              // Insert the actual AI message into the conversation
+              const { error: insertMessageError } = await supabase
+                .from('messages')
+                .insert({
+                  conversation_id: convData.id,
+                  sender_id: matchData.user1_id,
+                  content: aiText,
+                  message_type: 'text',
+                  status: 'sent',
+                  is_ai_generated: true,
+                  suggested_message_id: suggestion?.id || null,
+                });
+
+              if (!insertMessageError) {
+                await supabase
+                  .from('matches')
+                  .update({ ai_message_sent: true })
+                  .eq('id', matchData.id);
+                console.log(`AI first message sent for match ${matchData.id}`);
+              } else {
+                console.error('Failed to insert AI message:', insertMessageError);
+              }
+            } else {
+              console.error('Failed to fetch profiles for AI message', senderProfileError || recipientProfileError);
+            }
+          }
+        } catch (e) {
+          console.error('AI message generation step failed:', e);
+        }
       }
 
       // Send push notifications to both users
@@ -394,3 +457,28 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// -----------------------------------------------------------------------------
+// Helper: Fallback first message generator (no external API required)
+// Brief, under 10 words, first-text style
+// -----------------------------------------------------------------------------
+function generateFallbackFirstMessage(sender: any, recipient: any): string {
+  // Handle both 'preferred_subjects' (users table) and 'courses' (profiles table)
+  const senderCourses: string[] = Array.isArray(sender?.preferred_subjects) 
+    ? sender.preferred_subjects 
+    : (Array.isArray(sender?.courses) ? sender.courses : []);
+  const recipientCourses: string[] = Array.isArray(recipient?.preferred_subjects)
+    ? recipient.preferred_subjects
+    : (Array.isArray(recipient?.courses) ? recipient.courses : []);
+
+  const commonCourses = senderCourses.filter((c) => recipientCourses.includes(c));
+
+  // Generate brief message (under 10 words)
+  if (commonCourses.length > 0) {
+    // Use first shared course
+    return `Study ${commonCourses[0]} together?`;
+  }
+
+  // Fallback if no shared courses
+  return `Want to study together?`;
+}

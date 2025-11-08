@@ -44,6 +44,9 @@ export interface ConversationWithMatch extends Conversation {
     user1_id: string;
     user2_id: string;
     status: string;
+    match_type: 'auto' | 'manual';
+    matched_at: string;
+    ai_message_sent: boolean;
     user1: {
       id: string;
       full_name: string | null;

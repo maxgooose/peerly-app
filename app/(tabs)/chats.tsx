@@ -93,10 +93,18 @@ export default function ChatsScreen() {
     if (!currentUserId) return null;
 
     const otherUser = getOtherUser(item, currentUserId);
+    
+    // Check if this is a new match (matched in last 2 hours) with AI message
+    const isNewMatch = item.match && 
+      new Date(item.match.matched_at) > new Date(Date.now() - 2 * 60 * 60 * 1000) &&
+      item.match.match_type === 'auto';
 
     return (
       <TouchableOpacity
-        style={styles.conversationItem}
+        style={[
+          styles.conversationItem,
+          isNewMatch && styles.conversationItemHighlight
+        ]}
         onPress={() => handleConversationPress(item)}
       >
         {/* User Avatar */}
@@ -111,6 +119,12 @@ export default function ChatsScreen() {
               <Text style={styles.avatarPlaceholderText}>
                 {otherUser.full_name?.charAt(0).toUpperCase() || '?'}
               </Text>
+            </View>
+          )}
+          {/* New Match Indicator */}
+          {isNewMatch && (
+            <View style={styles.newMatchBadge}>
+              <Ionicons name="sparkles" size={12} color="#FFFFFF" />
             </View>
           )}
         </View>
@@ -128,9 +142,19 @@ export default function ChatsScreen() {
             )}
           </View>
 
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.last_message_content || 'No messages yet'}
-          </Text>
+          <View style={styles.lastMessageRow}>
+            {isNewMatch && (
+              <View style={styles.newTag}>
+                <Text style={styles.newTagText}>NEW</Text>
+              </View>
+            )}
+            <Text style={[
+              styles.lastMessage,
+              isNewMatch && styles.lastMessageBold
+            ]} numberOfLines={1}>
+              {item.last_message_content || 'No messages yet'}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -348,6 +372,42 @@ const styles = StyleSheet.create({
   lastMessage: {
     fontSize: 15,
     color: '#8E8E93',
+  },
+  lastMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  lastMessageBold: {
+    fontWeight: '600',
+    color: '#000000',
+  },
+  conversationItemHighlight: {
+    backgroundColor: '#F0F8FF',
+  },
+  newMatchBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  newTag: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  newTagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyState: {
     flex: 1,

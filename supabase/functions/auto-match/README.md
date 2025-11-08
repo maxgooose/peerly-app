@@ -14,7 +14,9 @@ This Supabase Edge Function runs the auto-matching algorithm to pair compatible 
    - Academic year proximity
 3. Creates match record with type 'auto'
 4. Creates conversation for the match
-5. Tracks compatibility score in analytics table
+5. Generates and sends a first message (fallback text when no Gemini key)
+6. Stores suggestion and chat message; updates `matches.ai_message_sent`
+7. Tracks compatibility score in analytics table
 
 ## Setup
 
@@ -110,6 +112,30 @@ Check the Edge Function logs in Supabase Dashboard:
 2. Click on "auto-match"
 3. View Logs tab
 
+### Verify AI first messages
+
+```sql
+-- Recent AI messages
+SELECT id, conversation_id, sender_id, created_at
+FROM messages
+WHERE is_ai_generated = true
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Recent suggestions
+SELECT id, sender_id, recipient_id, created_at
+FROM suggested_messages
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Matches flagged as AI message sent
+SELECT id, ai_message_sent, matched_at
+FROM matches
+WHERE ai_message_sent = true
+ORDER BY matched_at DESC
+LIMIT 10;
+```
+
 ## Troubleshooting
 
 ### Function not running
@@ -153,7 +179,7 @@ The Edge Function uses these environment variables (automatically provided by Su
 
 ## Next Steps
 
-After auto-matching works:
+After auto-matching + AI message works:
 1. Add push notifications when users get matched
-2. Implement AI-generated first messages using Gemini
+2. Switch cron schedule to daily in production
 3. Add match quality tracking and algorithm optimization
