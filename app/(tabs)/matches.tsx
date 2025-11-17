@@ -236,7 +236,7 @@ function MatchModal({ user, visible, onClose }: { user: User | null; visible: bo
         <View style={styles.matchModal}>
           <Text style={styles.matchTitle}>It's a Match! 🎉</Text>
           <Image 
-            source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/200x200.png?text=Peerly' }} 
+            source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/200x200.png?text=Nested' }} 
             style={styles.matchImage}
           />
           <Text style={styles.matchName}>{user.full_name}</Text>
@@ -254,7 +254,7 @@ function ProfileCard({ user }: { user: User }) {
   return (
     <View style={styles.card}>
       <Image
-        source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/600x400.png?text=Peerly' }}
+        source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/600x400.png?text=Nested' }}
         style={styles.image}
       />
       <View style={styles.cardContent}>

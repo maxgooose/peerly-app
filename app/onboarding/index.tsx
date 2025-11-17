@@ -8,7 +8,7 @@ export default function OnboardingWelcome() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.emoji}>🎓</Text>
-        <Text style={styles.title}>Welcome to Peerly!</Text>
+        <Text style={styles.title}>Welcome to Nested!</Text>
         <Text style={styles.subtitle}>
           Find your perfect study buddy in just a few steps
         </Text>
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   button: {
-    backgroundColor: '#A67B5B',
+    backgroundColor: '#8B5FBF',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

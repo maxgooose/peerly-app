@@ -207,7 +207,7 @@ export default function MatchesScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#8B5FBF" />
         <Text style={styles.loadingText}>Loading your matches...</Text>
       </View>
     );
@@ -220,14 +220,14 @@ export default function MatchesScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          tintColor="#007AFF"
+          tintColor="#8B5FBF"
         />
       }
     >
       {/* Countdown Timer Section */}
       <View style={styles.timerCard}>
         <View style={styles.timerHeader}>
-          <Ionicons name="time-outline" size={24} color="#007AFF" />
+          <Ionicons name="time-outline" size={24} color="#8B5FBF" />
           <Text style={styles.timerTitle}>Next Match In</Text>
         </View>
         <Text style={styles.timerCountdown}>{timeUntilMatch || 'Calculating...'}</Text>
@@ -275,15 +275,15 @@ export default function MatchesScreen() {
       <View style={styles.infoSection}>
         <Text style={styles.infoTitle}>How Daily Matches Work</Text>
         <View style={styles.infoItem}>
-          <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+          <Ionicons name="calendar-outline" size={20} color="#8B5FBF" />
           <Text style={styles.infoText}>Get matched with compatible study partners every 24 hours</Text>
         </View>
         <View style={styles.infoItem}>
-          <Ionicons name="sparkles-outline" size={20} color="#007AFF" />
+          <Ionicons name="sparkles-outline" size={20} color="#8B5FBF" />
           <Text style={styles.infoText}>AI generates a personalized icebreaker to start the conversation</Text>
         </View>
         <View style={styles.infoItem}>
-          <Ionicons name="chatbubbles-outline" size={20} color="#007AFF" />
+          <Ionicons name="chatbubbles-outline" size={20} color="#8B5FBF" />
           <Text style={styles.infoText}>Start chatting immediately with your new match!</Text>
         </View>
       </View>
@@ -316,7 +316,7 @@ function MatchCard({ match, onPress }: { match: TodaysMatch; onPress: () => void
           </Text>
           {match.has_ai_message && (
             <View style={styles.aiChip}>
-              <Ionicons name="sparkles" size={12} color="#007AFF" />
+              <Ionicons name="sparkles" size={12} color="#8B5FBF" />
               <Text style={styles.aiChipText}>AI Message</Text>
             </View>
           )}
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   timerCountdown: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#8B5FBF',
     marginVertical: 8,
   },
   timerSubtext: {
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   matchAvatarPlaceholder: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5FBF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   aiChipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#8B5FBF',
     marginLeft: 4,
   },
   matchCardInfo: {
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   subjectTagText: {
     fontSize: 12,
-    color: '#007AFF',
+    color: '#8B5FBF',
     fontWeight: '500',
   },
   matchCardLastMessage: {
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#8B5FBF',
     marginTop: 12,
     fontWeight: '500',
   },

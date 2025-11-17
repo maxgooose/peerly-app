@@ -1,14 +1,14 @@
 // Design system colors and styles
 export const colors = {
-  // Primary palette - light brown and soft tones
-  primary: '#D4A574',      // Light brown
-  primaryDark: '#B8935A',  // Darker brown
-  primaryLight: '#E6C49A', // Lighter brown
+  // Primary palette - purple tones
+  primary: '#8B5FBF',      // Main purple
+  primaryDark: '#6D4A99',  // Darker purple
+  primaryLight: '#A47ED1', // Lighter purple
   
-  // Secondary palette - soft complementary colors
-  secondary: '#A8C8A8',    // Soft sage green
-  secondaryDark: '#8FB08F', // Darker sage
-  secondaryLight: '#C4D4C4', // Lighter sage
+  // Secondary palette - light brown tones
+  secondary: '#D4A574',    // Light brown
+  secondaryDark: '#B8935A', // Darker brown
+  secondaryLight: '#E6C49A', // Lighter brown
   
   // Neutral palette
   background: '#FDFCF8',   // Warm white

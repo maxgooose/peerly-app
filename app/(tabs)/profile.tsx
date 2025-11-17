@@ -79,7 +79,7 @@ export default function ProfileScreen() {
       {/* Profile Photo */}
       <View style={styles.photoContainer}>
         <Image 
-          source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/150x150.png?text=Peerly' }} 
+          source={{ uri: user.profile_photo_url || 'https://via.placeholder.com/150x150.png?text=Nested' }} 
           style={styles.photo} 
         />
       </View>

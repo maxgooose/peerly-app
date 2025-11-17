@@ -148,7 +148,7 @@ export default function SettingsScreen() {
   function handleTermsOfService() {
     Alert.alert(
       'Terms of Service',
-      'Our terms of service outline the rules and guidelines for using Peerly.',
+      'Our terms of service outline the rules and guidelines for using Nested.',
       [
         { text: 'Close', style: 'cancel' },
         {
@@ -175,7 +175,7 @@ export default function SettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingContent}>
-            <Ionicons name="notifications-outline" size={24} color="#007AFF" />
+            <Ionicons name="notifications-outline" size={24} color="#8B5FBF" />
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>All Notifications</Text>
               <Text style={styles.settingDescription}>Enable or disable all notifications</Text>
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
           <Switch
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+            trackColor={{ false: '#E5E5EA', true: '#8B5FBF' }}
             thumbColor={notificationsEnabled ? '#FFFFFF' : '#FFFFFF'}
           />
         </View>
@@ -200,7 +200,7 @@ export default function SettingsScreen() {
           <Switch
             value={matchNotifications}
             onValueChange={setMatchNotifications}
-            trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+            trackColor={{ false: '#E5E5EA', true: '#8B5FBF' }}
             thumbColor={matchNotifications ? '#FFFFFF' : '#FFFFFF'}
             disabled={!notificationsEnabled}
           />
@@ -217,7 +217,7 @@ export default function SettingsScreen() {
           <Switch
             value={messageNotifications}
             onValueChange={setMessageNotifications}
-            trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+            trackColor={{ false: '#E5E5EA', true: '#8B5FBF' }}
             thumbColor={messageNotifications ? '#FFFFFF' : '#FFFFFF'}
             disabled={!notificationsEnabled}
           />
@@ -234,7 +234,7 @@ export default function SettingsScreen() {
           <Switch
             value={studyReminders}
             onValueChange={setStudyReminders}
-            trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+            trackColor={{ false: '#E5E5EA', true: '#8B5FBF' }}
             thumbColor={studyReminders ? '#FFFFFF' : '#FFFFFF'}
             disabled={!notificationsEnabled}
           />
@@ -247,7 +247,7 @@ export default function SettingsScreen() {
         
         <TouchableOpacity style={styles.settingItem} onPress={handleEditProfile}>
           <View style={styles.settingContent}>
-            <Ionicons name="person-outline" size={24} color="#007AFF" />
+            <Ionicons name="person-outline" size={24} color="#8B5FBF" />
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Edit Profile</Text>
               <Text style={styles.settingDescription}>Update your information and photos</Text>
@@ -258,7 +258,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity style={styles.settingItem} onPress={handleChangePassword}>
           <View style={styles.settingContent}>
-            <Ionicons name="lock-closed-outline" size={24} color="#007AFF" />
+            <Ionicons name="lock-closed-outline" size={24} color="#8B5FBF" />
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Change Password</Text>
               <Text style={styles.settingDescription}>Update your account password</Text>
@@ -298,7 +298,7 @@ export default function SettingsScreen() {
           <View style={styles.settingContent}>
             <Ionicons name="star-outline" size={24} color="#FF9500" />
             <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Rate Peerly</Text>
+              <Text style={styles.settingLabel}>Rate Nested</Text>
               <Text style={styles.settingDescription}>Rate us on the App Store</Text>
             </View>
           </View>

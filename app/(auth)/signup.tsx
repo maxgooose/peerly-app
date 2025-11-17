@@ -116,7 +116,7 @@ export default function SignUpScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Join Peerly</Text>
+            <Text style={styles.title}>Join Nested</Text>
             <Text style={styles.subtitle}>
               Create your account to start finding study buddies
             </Text>

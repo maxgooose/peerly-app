@@ -5,7 +5,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
+        tabBarActiveTintColor: '#8B5FBF',
         tabBarInactiveTintColor: '#8E8E93',
         headerStyle: {
           backgroundColor: '#F2F2F7',
@@ -39,24 +39,6 @@ export default function TabsLayout() {
           title: 'Chats',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: 'Progress',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trending-up" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="schedule"
-        options={{
-          title: 'Schedule',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
           ),
         }}
       />

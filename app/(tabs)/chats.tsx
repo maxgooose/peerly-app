@@ -240,7 +240,7 @@ export default function ChatsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#8B5FBF" />
       </View>
     );
   }
@@ -271,7 +271,7 @@ export default function ChatsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#007AFF"
+            tintColor="#8B5FBF"
           />
         }
       />
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   activeSegmentText: {
-    color: '#007AFF',
+    color: '#8B5FBF',
     fontWeight: '600',
   },
   conversationItem: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
   },
   avatarPlaceholder: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5FBF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5FBF',
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   newTag: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5FBF',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   createButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#8B5FBF',
     borderRadius: 8,
     paddingHorizontal: 24,
     paddingVertical: 12,
