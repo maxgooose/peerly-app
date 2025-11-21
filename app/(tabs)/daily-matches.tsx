@@ -123,7 +123,7 @@ export default function MatchesScreen() {
       }
 
       // Get conversations for these matches
-      const { data: conversations } = await getConversations();
+      const conversations = await getConversations();
 
       // Transform to TodaysMatch format
       const transformedMatches: TodaysMatch[] = (matches || []).map((match: any) => {

@@ -22,6 +22,18 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // Supabase client for database operations (ESM import for Deno compatibility)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+function jsonResponse(body: Record<string, any>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    },
+  });
+}
+
 /**
  * UserProfile interface - matches the database schema
  * Adjust these fields based on your actual profiles table structure
@@ -66,12 +78,14 @@ serve(async (req) => {
   // Browsers send OPTIONS request before actual POST to check CORS permissions
   // Must respond with proper headers to allow cross-origin requests from mobile app
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',  // Allow all origins (restrict in production if needed)
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
+    return jsonResponse({ ok: true });
+  }
+
+  if (req.method !== 'POST') {
+    return jsonResponse({
+      success: false,
+      error: 'Method not allowed',
+    }, 405);
   }
 
   try {
@@ -79,14 +93,26 @@ serve(async (req) => {
     // Request Validation
     // ============================================================================
     // Extract and validate required parameters from request body
-    const { senderId, recipientId } = await req.json();
+    let payload: any;
+    try {
+      payload = await req.json();
+    } catch (_parseError) {
+      return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400);
+    }
+
+    const { senderId, recipientId } = payload ?? {};
 
     // Both IDs are required - return 400 Bad Request if missing
     if (!senderId || !recipientId) {
-      return new Response(
-        JSON.stringify({ error: 'senderId and recipientId are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'senderId and recipientId are required' }, 400);
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase environment variables are missing');
+      return jsonResponse({ success: false, error: 'Configuration error' }, 500);
     }
 
     // ============================================================================
@@ -99,8 +125,8 @@ serve(async (req) => {
      * - This ensures user can only access data they're permitted to see
      */
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',      // Project URL from environment
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '', // Public anon key from environment
+      supabaseUrl,      // Project URL from environment
+      supabaseAnonKey, // Public anon key from environment
       {
         global: {
           // Forward the Authorization header from the original request
@@ -137,11 +163,9 @@ serve(async (req) => {
       .single();
 
     // Handle database errors - return 500 if either fetch failed
-    if (senderError || recipientError) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user profiles' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (senderError || recipientError || !senderData || !recipientData) {
+      console.error('Failed to fetch user profiles', { senderError, recipientError });
+      return jsonResponse({ error: 'Failed to fetch user profiles' }, 500);
     }
 
     // ============================================================================
@@ -230,21 +254,12 @@ serve(async (req) => {
      * - sender/recipient names: useful for UI display
      * - CORS headers: allow mobile app to receive response
      */
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: message,
-        sender: sender.name,
-        recipient: recipient.name,
-      }),
-      {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Access-Control-Allow-Origin': '*'  // Allow cross-origin response
-        },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      message: message,
+      sender: sender.name,
+      recipient: recipient.name,
+    });
   } catch (error) {
     // ============================================================================
     // Global Error Handler
@@ -256,13 +271,12 @@ serve(async (req) => {
      * - In production, consider sanitizing error messages for security
      */
     console.error('Error in generate-first-message function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message  // Include details for debugging (remove in production)
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    const details = error instanceof Error ? error.message : 'Unknown error';
+    return jsonResponse({
+      success: false,
+      error: 'Internal server error',
+      details,
+    }, 500);
   }
 });
 
@@ -351,15 +365,19 @@ Generate ONLY the message (under 10 words):`;
   // ============================================================================
   /**
    * Make HTTP request to Gemini API
-   * 
+   *
    * Generation Config Parameters:
    * - temperature (0.9): High creativity for varied, natural messages
    * - topK (40): Consider top 40 tokens for diversity
    * - topP (0.95): Cumulative probability threshold
    * - maxOutputTokens (200): Limit response length (~150-200 words max)
-   * 
+   *
    * API Key passed as URL parameter per Gemini API requirements
    */
+  if (!GEMINI_API_KEY) {
+    throw new Error('Gemini API key is not configured');
+  }
+
   const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -394,7 +412,11 @@ Generate ONLY the message (under 10 words):`;
    * We extract the text from the first candidate's first part
    */
   const data = await response.json();
-  const message = data.candidates[0].content.parts[0].text;
+  const message = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!message || typeof message !== 'string') {
+    throw new Error('Gemini API returned an unexpected response');
+  }
 
   // ============================================================================
   // Step 5: Clean and Return Message
@@ -420,17 +442,3 @@ Generate ONLY the message (under 10 words):`;
  * Converts numeric year to readable label
  * Used in prompts to provide context about academic standing
  * 
- * @param year - Student's year (1-8)
- * @returns Human-readable year label
- */
-function getYearLabel(year: number): string {
-  const labels: { [key: number]: string } = {
-    1: 'Freshman',
-    2: 'Sophomore',
-    3: 'Junior',
-    4: 'Senior',
-  };
-  // Return specific label for 1-4, otherwise assume graduate student
-  return labels[year] || 'Graduate Student';
-}
-

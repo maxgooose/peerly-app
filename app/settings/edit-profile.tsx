@@ -327,6 +327,9 @@ export default function EditProfileScreen() {
         Alert.alert('Error', result.error || 'Failed to update profile.');
         return;
       }
+      if (result.data) {
+        setProfile(result.data);
+      }
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);

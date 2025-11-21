@@ -3,6 +3,13 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+function jsonResponse(body: Record<string, any>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 // Helper function to send push notification
 async function sendPushNotification(params: {
   expoPushToken: string;
@@ -28,13 +35,6 @@ async function sendPushNotification(params: {
       },
       body: JSON.stringify(message),
     });
-
-    const result = await response.json();
-
-    if (result.data?.status === 'error') {
-      console.error('Push notification error:', result.data);
-      return false;
-    }
 
     return true;
   } catch (error) {
@@ -238,10 +238,7 @@ Deno.serve(async (req) => {
     console.log(`Found ${eligible.length} eligible users`);
 
     if (eligible.length < 2) {
-      return new Response(
-        JSON.stringify({ success: true, matchesCreated: 0, message: 'Not enough eligible users' }),
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: true, matchesCreated: 0, message: 'Not enough eligible users' });
     }
 
     const usedIds = new Set<string>();
@@ -402,19 +399,6 @@ Deno.serve(async (req) => {
             matchId: matchData.id,
           },
         });
-        console.log(`Sent notification to ${user.full_name}`);
-      }
-
-      if (bestMatch.candidate.push_token) {
-        await sendPushNotification({
-          expoPushToken: bestMatch.candidate.push_token,
-          title: 'New Study Match! 🎓',
-          body: `You matched with ${user.full_name || 'a study buddy'}`,
-          data: {
-            type: 'new_match',
-            matchId: matchData.id,
-          },
-        });
         console.log(`Sent notification to ${bestMatch.candidate.full_name}`);
       }
 
@@ -437,23 +421,18 @@ Deno.serve(async (req) => {
 
     console.log(`Auto-match cycle complete. Created ${matchesCreated} matches.`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        matchesCreated,
-        errors: errors.length > 0 ? errors : undefined,
-      }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: true,
+      matchesCreated,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+
   } catch (error) {
     console.error('Auto-match error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
   }
 });
 
@@ -479,5 +458,3 @@ function generateFallbackFirstMessage(sender: any, recipient: any): string {
   }
 
   // Fallback if no shared courses
-  return `Want to study together?`;
-}

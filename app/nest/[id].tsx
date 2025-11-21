@@ -25,7 +25,8 @@ import { NestMembersModal } from '@/components/nest/NestMembersModal';
 import type { NestWithMembers, NestMessageWithSender } from '@/types/chat';
 
 export default function NestChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
   
@@ -41,6 +42,11 @@ export default function NestChatScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) {
+      router.back();
+      return;
+    }
+
     initializeNest();
     subscribeToMessages();
     
@@ -61,6 +67,11 @@ export default function NestChatScreen() {
 
   const initializeNest = async () => {
     try {
+      if (!id) {
+        router.back();
+        return;
+      }
+
       setLoading(true);
       
       // Check if user is a member
@@ -102,6 +113,8 @@ export default function NestChatScreen() {
 
   const loadMessages = async () => {
     try {
+      if (!id) return;
+
       const messagesData = await getNestMessages(id, { limit: 50 });
       setMessages(messagesData);
       setHasMoreMessages(messagesData.length === 50);
@@ -111,7 +124,7 @@ export default function NestChatScreen() {
   };
 
   const loadOlderMessages = async () => {
-    if (!hasMoreMessages || loadingOlderMessages || messages.length === 0) {
+    if (!id || !hasMoreMessages || loadingOlderMessages || messages.length === 0) {
       return;
     }
 
@@ -137,6 +150,8 @@ export default function NestChatScreen() {
   };
 
   const subscribeToMessages = () => {
+    if (!id) return null;
+
     const channel = supabase
       .channel(`nest:${id}`)
       .on(
@@ -176,7 +191,7 @@ export default function NestChatScreen() {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || sending) return;
+    if (!id || !content.trim() || sending) return;
 
     try {
       setSending(true);
