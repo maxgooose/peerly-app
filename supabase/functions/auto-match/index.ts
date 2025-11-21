@@ -3,6 +3,13 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+function jsonResponse(body: Record<string, any>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 // Helper function to send push notification
 async function sendPushNotification(params: {
   expoPushToken: string;
@@ -238,10 +245,7 @@ Deno.serve(async (req) => {
     console.log(`Found ${eligible.length} eligible users`);
 
     if (eligible.length < 2) {
-      return new Response(
-        JSON.stringify({ success: true, matchesCreated: 0, message: 'Not enough eligible users' }),
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: true, matchesCreated: 0, message: 'Not enough eligible users' });
     }
 
     const usedIds = new Set<string>();
@@ -437,23 +441,17 @@ Deno.serve(async (req) => {
 
     console.log(`Auto-match cycle complete. Created ${matchesCreated} matches.`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        matchesCreated,
-        errors: errors.length > 0 ? errors : undefined,
-      }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: true,
+      matchesCreated,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   } catch (error) {
     console.error('Auto-match error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
   }
 });
 

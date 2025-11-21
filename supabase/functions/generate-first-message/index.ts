@@ -22,6 +22,18 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // Supabase client for database operations (ESM import for Deno compatibility)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+function jsonResponse(body: Record<string, any>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    },
+  });
+}
+
 /**
  * UserProfile interface - matches the database schema
  * Adjust these fields based on your actual profiles table structure
@@ -66,12 +78,7 @@ serve(async (req) => {
   // Browsers send OPTIONS request before actual POST to check CORS permissions
   // Must respond with proper headers to allow cross-origin requests from mobile app
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',  // Allow all origins (restrict in production if needed)
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
+    return jsonResponse({ ok: true });
   }
 
   try {
@@ -83,10 +90,7 @@ serve(async (req) => {
 
     // Both IDs are required - return 400 Bad Request if missing
     if (!senderId || !recipientId) {
-      return new Response(
-        JSON.stringify({ error: 'senderId and recipientId are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'senderId and recipientId are required' }, 400);
     }
 
     // ============================================================================
@@ -230,21 +234,12 @@ serve(async (req) => {
      * - sender/recipient names: useful for UI display
      * - CORS headers: allow mobile app to receive response
      */
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: message,
-        sender: sender.name,
-        recipient: recipient.name,
-      }),
-      {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Access-Control-Allow-Origin': '*'  // Allow cross-origin response
-        },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      message: message,
+      sender: sender.name,
+      recipient: recipient.name,
+    });
   } catch (error) {
     // ============================================================================
     // Global Error Handler
@@ -256,13 +251,12 @@ serve(async (req) => {
      * - In production, consider sanitizing error messages for security
      */
     console.error('Error in generate-first-message function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message  // Include details for debugging (remove in production)
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    const details = error instanceof Error ? error.message : 'Unknown error';
+    return jsonResponse({
+      success: false,
+      error: 'Internal server error',
+      details,
+    }, 500);
   }
 });
 

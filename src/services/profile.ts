@@ -61,6 +61,10 @@ export interface ServiceResult {
   error?: string;
 }
 
+export interface ProfileUpdateResult extends ServiceResult {
+  data?: UserProfile;
+}
+
 /**
  * Profile fetch response with data
  */
@@ -149,7 +153,7 @@ export async function getUserProfile(userId: string): Promise<ProfileResult> {
 export async function updateProfile(
   userId: string,
   updates: ProfileUpdate
-): Promise<ServiceResult> {
+): Promise<ProfileUpdateResult> {
   try {
     // Validate user ID
     if (!userId || typeof userId !== 'string') {
@@ -270,11 +274,31 @@ export async function updateProfile(
       sanitizedUpdates.availability = updates.availability;
     }
 
-    // Update profile in database
-    const { error } = await supabase
+    // Update profile in database and return the updated row for sync
+    const { data, error } = await supabase
       .from('users')
       .update(sanitizedUpdates)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select(`
+        id,
+        email,
+        full_name,
+        university,
+        major,
+        year,
+        bio,
+        profile_photo_url,
+        has_profile_photo,
+        preferred_subjects,
+        availability,
+        study_style,
+        study_goals,
+        badge_display_preference,
+        primary_badge_id,
+        is_active,
+        created_at
+      `)
+      .single();
 
     if (error) {
       console.error('Error updating profile:', error);
@@ -286,6 +310,7 @@ export async function updateProfile(
 
     return {
       success: true,
+      data: data as UserProfile,
     };
   } catch (error) {
     console.error('Exception in updateProfile:', error);

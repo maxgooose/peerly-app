@@ -31,6 +31,8 @@ export interface Message {
   thumbnail_url: string | null;
   status: MessageStatus;
   is_ai_generated: boolean;
+  is_read?: boolean;
+  read_at?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -66,6 +68,13 @@ export interface MessageWithSender extends Message {
     full_name: string | null;
     profile_photo_url: string | null;
   } | null;
+}
+
+export interface ReadReceipt {
+  id: string;
+  message_id: string;
+  user_id: string;
+  read_at: string;
 }
 
 // Types for creating messages

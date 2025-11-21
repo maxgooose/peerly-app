@@ -9,6 +9,7 @@ import type { ConversationWithMatch, MessageWithSender, Message } from '@/types/
 import { checkRateLimitByKey, recordAction } from './rateLimiting';
 import { sanitizeMessage } from '@/utils/sanitization';
 import { isOnline, queueOfflineMessage } from './offline';
+import type { ReadReceipt } from '@/types/chat';
 
 /**
  * Get all conversations for the current user
@@ -110,7 +111,7 @@ export async function getConversation(conversationId: string): Promise<Conversat
  * Phase 5: Added pagination parameters for loading older messages
  */
 export async function getMessages(
-  conversationId: string, 
+  conversationId: string,
   options?: {
     limit?: number;
     before?: string; // timestamp for cursor-based pagination
@@ -151,6 +152,104 @@ export async function getMessages(
     return ((data || []) as unknown as MessageWithSender[]).reverse();
   } catch (error) {
     console.error('getMessages error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Mark all messages in a conversation as read for the current user
+ * Also writes into message_read_receipts for analytics and reliability
+ */
+export async function markConversationRead(conversationId: string): Promise<{ updated: number }> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get messages that need receipts
+    const { data: unreadMessages, error: unreadError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', user.id)
+      .eq('is_read', false)
+      .is('deleted_at', null);
+
+    if (unreadError) {
+      throw unreadError;
+    }
+
+    const messageIds = (unreadMessages || []).map((m: any) => m.id);
+
+    if (messageIds.length === 0) {
+      return { updated: 0 };
+    }
+
+    // Upsert read receipts
+    const receipts = messageIds.map((messageId: string) => ({
+      message_id: messageId,
+      user_id: user.id,
+    }));
+
+    const { error: receiptError } = await supabase
+      .from('message_read_receipts')
+      .upsert(receipts, { onConflict: 'message_id,user_id' });
+
+    if (receiptError) {
+      throw receiptError;
+    }
+
+    // Mark messages as read
+    const { error: updateError } = await supabase
+      .from('messages')
+      .update({ is_read: true, read_at: new Date().toISOString(), status: 'delivered' })
+      .in('id', messageIds);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return { updated: messageIds.length };
+  } catch (error) {
+    console.error('markConversationRead error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch read receipts for all messages within a conversation
+ */
+export async function getConversationReadReceipts(conversationId: string): Promise<ReadReceipt[]> {
+  try {
+    const { data: messageRows, error: messageError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .is('deleted_at', null);
+
+    if (messageError) {
+      throw messageError;
+    }
+
+    const messageIds = (messageRows || []).map((m: any) => m.id);
+    if (messageIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('message_read_receipts')
+      .select('*')
+      .in('message_id', messageIds);
+
+    if (error) {
+      throw error;
+    }
+
+    return (data || []) as ReadReceipt[];
+  } catch (error) {
+    console.error('getConversationReadReceipts error:', error);
     throw error;
   }
 }
