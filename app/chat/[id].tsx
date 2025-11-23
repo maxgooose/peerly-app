@@ -22,7 +22,7 @@ import { getMessages, getConversation, getOtherUser, sendMessage, sendImageMessa
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import type { MessageWithSender, ConversationWithMatch, Message } from '@/types/chat';
-import { getOfflineMessages, syncOfflineData, onNetworkStateChange } from '@/src/services/offline';
+import { getOfflineMessages, syncOfflineData, onNetworkStateChange } from '@/services/offline';
 
 export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

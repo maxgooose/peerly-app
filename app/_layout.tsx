@@ -3,8 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { initializePushNotifications, addNotificationResponseListener } from '@/services/notifications';
-import { initializeNetworkMonitoring, onNetworkStateChange } from '@/src/services/offline';
-import { OfflineIndicator } from '@/src/components/OfflineIndicator';
+import { initializeNetworkMonitoring, onNetworkStateChange } from '@/services/offline';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 export default function RootLayout() {
   const router = useRouter();

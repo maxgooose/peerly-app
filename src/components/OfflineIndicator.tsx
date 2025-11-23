@@ -4,9 +4,9 @@
 // Shows banner when device is offline
 // Auto-hides when connection is restored
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { onNetworkStateChange } from '@/src/services/offline';
+import React, {useEffect, useState} from 'react';
+import {Animated, StyleSheet, Text} from 'react-native';
+import {onNetworkStateChange} from '@/services/offline';
 
 export function OfflineIndicator() {
   const [isOffline, setIsOffline] = useState(false);
@@ -14,19 +14,17 @@ export function OfflineIndicator() {
 
   useEffect(() => {
     // Subscribe to network state changes
-    const unsubscribe = onNetworkStateChange((state) => {
-      const offline = !state.isConnected || !state.isInternetReachable;
-      setIsOffline(offline);
+      return onNetworkStateChange((state) => {
+        const offline = !state.isConnected || !state.isInternetReachable;
+        setIsOffline(offline);
 
-      // Animate banner in/out
-      Animated.timing(slideAnim, {
-        toValue: offline ? 0 : -50,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+        // Animate banner in/out
+        Animated.timing(slideAnim, {
+            toValue: offline ? 0 : -50,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
     });
-
-    return unsubscribe;
   }, [slideAnim]);
 
   if (!isOffline) {
@@ -69,4 +67,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

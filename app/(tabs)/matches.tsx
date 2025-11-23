@@ -4,7 +4,7 @@ import Swiper from 'react-native-deck-swiper';
 import { supabase } from '@/services/supabase';
 import { getEligibleMatches } from '@/services/matching';
 import { checkRateLimitByKey, recordAction } from '@/services/rateLimiting';
-import { isOnline, queueOfflineAction } from '@/src/services/offline';
+import { isOnline, queueOfflineAction } from '@/services/offline';
 
 const { width } = Dimensions.get('window');
 

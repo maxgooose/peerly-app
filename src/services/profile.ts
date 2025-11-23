@@ -6,7 +6,7 @@
 
 import { supabase } from './supabase';
 import type { WeeklyAvailability } from './supabase';
-import { sanitizeName, sanitizeProfileText, sanitizeSubject } from '../utils/sanitization';
+import { sanitizeName, sanitizeProfileText, sanitizeSubject } from '@/utils/sanitization';
 
 // =====================================================
 // Type Definitions
@@ -84,7 +84,7 @@ export interface ProfileResult extends ServiceResult {
 export async function getUserProfile(userId: string): Promise<ProfileResult> {
   try {
     // Validate input
-    if (!userId || typeof userId !== 'string') {
+    if (!userId) {
       return {
         success: false,
         error: 'Invalid user ID provided.',
@@ -156,7 +156,7 @@ export async function updateProfile(
 ): Promise<ProfileUpdateResult> {
   try {
     // Validate user ID
-    if (!userId || typeof userId !== 'string') {
+    if (!userId) {
       return {
         success: false,
         error: 'Invalid user ID provided.',
@@ -269,7 +269,7 @@ export async function updateProfile(
       sanitizedUpdates.primary_badge_id = updates.primary_badge_id;
     }
 
-// Availability - no sanitization needed, just pass through
+    // Availability - no sanitization needed, just pass through
     if (updates.availability !== undefined) {
       sanitizedUpdates.availability = updates.availability;
     }
@@ -330,9 +330,35 @@ export async function updateProfile(
 export async function deactivateAccount(userId: string): Promise<ServiceResult> {
   try {
     // Validate user ID
-    if (!userId || typeof userId !== 'string') {
+    if (!userId) {
       return {
         success: false,
         error: 'Invalid user ID provided.',
       };
     }
+
+    // Update account status in database
+    const { error } = await supabase
+      .from('users')
+      .update({ is_active: false })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error deactivating account:', error);
+      return {
+        success: false,
+        error: 'Failed to deactivate account. Please try again.',
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Exception in deactivateAccount:', error);
+    return {
+      success: false,
+      error: 'An unexpected error occurred while deactivating your account.',
+    };
+  }
+}

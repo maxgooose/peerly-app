@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { validateUniversityEmail, EmailValidationResult } from '../utils/emailValidation';
+import { validateUniversityEmail, EmailValidationResult } from '@/utils/emailValidation';
 import type { User } from '@supabase/supabase-js';
 
 export interface SignUpData {
